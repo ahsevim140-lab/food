@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Office Lunch Order</title>
+<title>طلب غداء المكتب</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --green-deep:#1c2b22; --green-panel:#24352a; --green-panel-2:#2c3f31;
@@ -13,16 +13,16 @@
     --line:#3c4d40; --danger:#d9694f;
   }
   *{box-sizing:border-box;}
-  body{margin:0; background:var(--green-deep); color:var(--cream); font-family:'Work Sans', sans-serif; min-height:100vh;}
+  body{margin:0; background:var(--green-deep); color:var(--cream); font-family:'Cairo', sans-serif; min-height:100vh;}
   .wrap{max-width:760px; margin:0 auto; padding:32px 20px 80px;}
   header{border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:24px;}
   .nav{display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;}
-  h1{font-family:'Fraunces', serif; font-weight:700; font-size:clamp(26px,5vw,36px); margin:0; letter-spacing:-0.01em;}
-  .date{font-family:'IBM Plex Mono', monospace; color:var(--gold-soft); font-size:13px;}
+  h1{font-family:'Cairo', sans-serif; font-weight:700; font-size:clamp(24px,5vw,32px); margin:0;}
+  .date{font-family:'Cairo', sans-serif; color:var(--gold-soft); font-size:13px;}
   .tabs{display:flex; gap:8px; margin-top:14px;}
   .tabs button{
-    font-family:'IBM Plex Mono', monospace; font-size:12.5px; cursor:pointer;
-    padding:7px 14px; border-radius:20px; border:1px solid var(--line); background:transparent; color:var(--cream-dim);
+    font-family:'Cairo', sans-serif; font-size:13px; cursor:pointer;
+    padding:7px 16px; border-radius:20px; border:1px solid var(--line); background:transparent; color:var(--cream-dim);
   }
   .tabs button.active{background:var(--gold); color:var(--green-deep); border-color:var(--gold); font-weight:600;}
 
@@ -30,23 +30,24 @@
   .view.active{display:block;}
 
   .field{margin-bottom:16px;}
-  .field label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--cream-dim); margin-bottom:6px;}
+  .field label{display:block; font-size:12px; color:var(--cream-dim); margin-bottom:6px;}
   .field input, .field select, .field textarea{
-    width:100%; font-family:'Work Sans', sans-serif; font-size:15px; padding:10px 12px;
+    width:100%; font-family:'Cairo', sans-serif; font-size:15px; padding:10px 12px;
     border-radius:8px; border:1px solid var(--line); background:var(--green-panel); color:var(--cream);
   }
-  .field select{appearance:none; background-image:linear-gradient(45deg, transparent 50%, var(--gold-soft) 50%), linear-gradient(135deg, var(--gold-soft) 50%, transparent 50%); background-position:calc(100% - 18px) center, calc(100% - 13px) center; background-size:5px 5px, 5px 5px; background-repeat:no-repeat;}
+  .field select{appearance:none; background-image:linear-gradient(45deg, transparent 50%, var(--gold-soft) 50%), linear-gradient(135deg, var(--gold-soft) 50%, transparent 50%); background-position:left 18px center, left 13px center; background-size:5px 5px, 5px 5px; background-repeat:no-repeat;}
   .field textarea{min-height:50px; resize:none;}
 
   table{width:100%; border-collapse:collapse; margin-bottom:8px;}
   thead th{
-    text-align:left; font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase;
-    letter-spacing:0.04em; color:var(--cream-dim); padding:0 8px 8px; border-bottom:1px solid var(--line);
+    text-align:right; font-family:'Cairo', sans-serif; font-size:12px;
+    color:var(--cream-dim); padding:0 8px 8px; border-bottom:1px solid var(--line); font-weight:600;
   }
   tbody td{padding:10px 8px; border-bottom:1px solid var(--line); font-size:14.5px;}
   tbody tr:last-child td{border-bottom:none;}
-  .price-cell{font-family:'IBM Plex Mono', monospace; color:var(--gold-soft); white-space:nowrap;}
-  .num-cell{font-family:'IBM Plex Mono', monospace; color:var(--gold-soft); text-align:right; white-space:nowrap;}
+  .num{font-family:'IBM Plex Mono', monospace; color:var(--gold-soft); white-space:nowrap; direction:ltr; unicode-bidi:embed;}
+  th.num-head{text-align:left;}
+  td.num-cell{text-align:left;}
   .qty-input{
     width:64px; font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center;
     padding:7px 6px; border-radius:6px; border:1px solid var(--line); background:var(--green-deep); color:var(--cream);
@@ -55,14 +56,14 @@
 
   .cart-summary{
     background:var(--green-panel); border:1px solid var(--line); border-radius:10px;
-    padding:14px 16px; margin:20px 0; font-family:'IBM Plex Mono', monospace; font-size:13.5px;
+    padding:14px 16px; margin:20px 0; font-size:13.5px;
     display:flex; justify-content:space-between; color:var(--cream-dim);
   }
-  .cart-summary strong{color:var(--gold-soft); font-size:15px;}
+  .cart-summary strong{color:var(--gold-soft); font-size:15px; font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:embed;}
 
   .submit-btn{
     width:100%; padding:14px; border:none; border-radius:8px; background:var(--gold); color:var(--green-deep);
-    font-family:'Work Sans', sans-serif; font-weight:600; font-size:15.5px; cursor:pointer;
+    font-family:'Cairo', sans-serif; font-weight:700; font-size:15.5px; cursor:pointer;
     transition:transform 0.08s ease, background 0.15s ease;
   }
   .submit-btn:hover{background:var(--gold-soft);}
@@ -72,95 +73,95 @@
   .status{margin-top:12px; font-size:13.5px; text-align:center;}
   .status.ok{color:#8fd39a;}
   .status.err{color:var(--danger);}
-  .loading, .setup-warning, .empty-note{font-family:'IBM Plex Mono', monospace; color:var(--cream-dim); font-size:14px; padding:16px 0;}
+  .loading, .setup-warning, .empty-note{font-family:'Cairo', sans-serif; color:var(--cream-dim); font-size:14px; padding:16px 0;}
   .setup-warning{background:var(--green-panel); border:1px solid var(--gold); border-radius:8px; padding:16px; color:var(--gold-soft);}
 
   .meta-row{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px;}
   .meta-card{flex:1; min-width:140px; background:var(--green-panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px;}
-  .meta-card .label{font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--cream-dim);}
-  .meta-card .value{font-family:'Fraunces', serif; font-weight:600; font-size:24px; color:var(--gold-soft); margin-top:4px;}
-  tfoot td{padding:14px 8px; font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:16px; border-top:2px solid var(--cream); color:var(--gold-soft);}
+  .meta-card .label{font-size:12px; color:var(--cream-dim);}
+  .meta-card .value{font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:24px; color:var(--gold-soft); margin-top:4px; direction:ltr;}
+  tfoot td{padding:14px 8px; font-family:'Cairo', sans-serif; font-weight:700; font-size:16px; border-top:2px solid var(--cream); color:var(--gold-soft);}
   tfoot td:first-child{color:var(--cream);}
 
   .refresh-row{display:flex; justify-content:space-between; align-items:center; margin:20px 0 6px; flex-wrap:wrap; gap:8px;}
   .refresh-btn{
-    font-family:'Work Sans', sans-serif; font-size:13px; font-weight:600; padding:9px 16px;
+    font-family:'Cairo', sans-serif; font-size:13px; font-weight:600; padding:9px 16px;
     border-radius:8px; border:1px solid var(--line); background:var(--green-panel); color:var(--gold-soft); cursor:pointer;
   }
   .refresh-btn:hover{background:var(--green-panel-2);}
-  .updated{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--cream-dim);}
+  .updated{font-family:'Cairo', sans-serif; font-size:12px; color:var(--cream-dim);}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="nav">
-      <h1 id="page-title">Office Lunch Order</h1>
+      <h1 id="page-title">طلب غداء المكتب</h1>
       <div class="date" id="today"></div>
     </div>
     <div class="tabs">
-      <button id="tab-order" class="active" onclick="switchTab('order')">Place Order</button>
-      <button id="tab-totals" onclick="switchTab('totals')">View Totals</button>
+      <button id="tab-order" class="active" onclick="switchTab('order')">تقديم الطلب</button>
+      <button id="tab-totals" onclick="switchTab('totals')">عرض الإجماليات</button>
     </div>
   </header>
 
   <!-- ORDER VIEW -->
   <div id="view-order" class="view active">
     <div class="field">
-      <label for="category">Category</label>
-      <select id="category"><option>Loading…</option></select>
+      <label for="category">الفئة</label>
+      <select id="category"><option>جارٍ التحميل…</option></select>
     </div>
 
     <table id="item-table" style="display:none;">
-      <thead><tr><th>Item</th><th>Price</th><th>Qty</th></tr></thead>
+      <thead><tr><th>الصنف</th><th class="num-head">السعر</th><th class="num-head">الكمية</th></tr></thead>
       <tbody id="item-rows"></tbody>
     </table>
-    <div id="empty-note" class="empty-note" style="display:none;">No items in this category.</div>
+    <div id="empty-note" class="empty-note" style="display:none;">لا توجد عناصر في هذه الفئة.</div>
 
     <div class="cart-summary">
-      <span id="cart-count">0 items selected</span>
-      <span>Total: <strong id="cart-total">$0.00</strong></span>
+      <span id="cart-count">0 عنصر مختار</span>
+      <span>الإجمالي: <strong id="cart-total">$0.00</strong></span>
     </div>
 
     <div class="field">
-      <label for="name">Your name</label>
-      <input id="name" type="text" placeholder="e.g. Sam">
+      <label for="name">اسمك</label>
+      <input id="name" type="text" placeholder="مثال: سارة">
     </div>
     <div class="field">
-      <label for="notes">Notes (optional)</label>
-      <textarea id="notes" placeholder="No onions, extra sauce…"></textarea>
+      <label for="notes">ملاحظات (اختياري)</label>
+      <textarea id="notes" placeholder="بدون بصل، صلصة إضافية…"></textarea>
     </div>
 
-    <button class="submit-btn" id="submit-btn">Submit Order</button>
+    <button class="submit-btn" id="submit-btn">إرسال الطلب</button>
     <div class="status" id="status"></div>
   </div>
 
   <!-- TOTALS VIEW -->
   <div id="view-totals" class="view">
     <div class="meta-row">
-      <div class="meta-card"><div class="label">Employees Ordered</div><div class="value" id="employee-count">–</div></div>
-      <div class="meta-card"><div class="label">Orders Submitted</div><div class="value" id="order-count">–</div></div>
-      <div class="meta-card"><div class="label">Grand Total</div><div class="value" id="grand-total">–</div></div>
+      <div class="meta-card"><div class="label">عدد الموظفين الذين طلبوا</div><div class="value" id="employee-count">–</div></div>
+      <div class="meta-card"><div class="label">عدد الطلبات</div><div class="value" id="order-count">–</div></div>
+      <div class="meta-card"><div class="label">الإجمالي الكلي</div><div class="value" id="grand-total">–</div></div>
     </div>
 
     <table id="totals-table" style="display:none;">
-      <thead><tr><th>Item</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Total</th></tr></thead>
+      <thead><tr><th>الصنف</th><th class="num-head">الكمية</th><th class="num-head">الإجمالي</th></tr></thead>
       <tbody id="totals-rows"></tbody>
-      <tfoot><tr><td>Grand Total</td><td></td><td class="num-cell" id="footer-total"></td></tr></tfoot>
+      <tfoot><tr><td>الإجمالي الكلي</td><td></td><td class="num-cell num" id="footer-total"></td></tr></tfoot>
     </table>
-    <div class="empty-note" id="totals-empty-note" style="display:none;">No orders submitted yet.</div>
+    <div class="empty-note" id="totals-empty-note" style="display:none;">لم يتم تقديم أي طلبات بعد.</div>
 
     <div class="refresh-row">
-      <button class="refresh-btn" id="refresh-btn">Refresh now</button>
+      <button class="refresh-btn" id="refresh-btn">تحديث الآن</button>
       <span class="updated" id="updated"></span>
     </div>
   </div>
 </div>
 
 <script>
-// ====== SET THIS AFTER YOU DEPLOY THE APPS SCRIPT WEB APP ======
+// ====== ضع رابط تطبيق الويب من Apps Script هنا بعد النشر ======
 const APPS_SCRIPT_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
-// =================================================================
+// ================================================================
 
 const FOUR_HOURS = 4 * 60 * 60 * 1000;
 let MENU = [];
@@ -168,7 +169,7 @@ const flatMenu = {}; // id -> {name, price, category}
 const qty = {}; // id -> quantity, persists across category switches
 let totalsLoadedOnce = false;
 
-document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, {
+document.getElementById('today').textContent = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
   weekday: 'long', month: 'long', day: 'numeric'
 });
 
@@ -178,16 +179,16 @@ function switchTab(tab) {
   document.getElementById('view-totals').classList.toggle('active', tab === 'totals');
   document.getElementById('tab-order').classList.toggle('active', tab === 'order');
   document.getElementById('tab-totals').classList.toggle('active', tab === 'totals');
-  document.getElementById('page-title').textContent = tab === 'order' ? 'Office Lunch Order' : 'Order Totals';
+  document.getElementById('page-title').textContent = tab === 'order' ? 'طلب غداء المكتب' : 'إجماليات الطلبات';
   if (tab === 'totals' && !totalsLoadedOnce) loadTotals();
 }
 
 // ---- Order view ----
 async function initOrder() {
   if (APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
-    document.getElementById('category').innerHTML = '<option>Setup needed</option>';
+    document.getElementById('category').innerHTML = '<option>الإعداد مطلوب</option>';
     document.getElementById('empty-note').style.display = 'block';
-    document.getElementById('empty-note').innerHTML = '<div class="setup-warning">Add your Apps Script Web App URL to APPS_SCRIPT_URL at the top of the script in this file.</div>';
+    document.getElementById('empty-note').innerHTML = '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف لتحميل القائمة.</div>';
     return;
   }
   try {
@@ -199,12 +200,16 @@ async function initOrder() {
     }));
     populateCategories();
   } catch (err) {
-    document.getElementById('category').innerHTML = '<option>Could not load menu</option>';
+    document.getElementById('category').innerHTML = '<option>تعذر تحميل القائمة</option>';
   }
 }
 
 function populateCategories() {
   const select = document.getElementById('category');
+  if (MENU.length === 0) {
+    select.innerHTML = '<option>لا توجد أصناف بعد</option>';
+    return;
+  }
   select.innerHTML = MENU.map(group => `<option value="${escapeHtml(group.category)}">${escapeHtml(group.category)}</option>`).join('');
   select.addEventListener('change', renderTable);
   renderTable();
@@ -220,7 +225,7 @@ function renderTable() {
   if (!group || group.items.length === 0) {
     table.style.display = 'none';
     emptyNote.style.display = 'block';
-    emptyNote.textContent = 'No items in this category.';
+    emptyNote.textContent = 'لا توجد عناصر في هذه الفئة.';
     return;
   }
 
@@ -229,8 +234,8 @@ function renderTable() {
   rowsEl.innerHTML = group.items.map(item => `
     <tr>
       <td>${escapeHtml(item.name)}</td>
-      <td class="price-cell">$${Number(item.price).toFixed(2)}</td>
-      <td><input type="number" min="0" step="1" class="qty-input" data-id="${item.id}" value="${qty[item.id] || ''}" placeholder="0"></td>
+      <td class="num-cell num">$${Number(item.price).toFixed(2)}</td>
+      <td class="num-cell"><input type="number" min="0" step="1" class="qty-input" data-id="${item.id}" value="${qty[item.id] || ''}" placeholder="0"></td>
     </tr>
   `).join('');
 
@@ -249,7 +254,7 @@ function renderCartSummary() {
     const q = qty[id] || 0;
     if (q > 0 && flatMenu[id]) { count += q; total += q * flatMenu[id].price; }
   });
-  document.getElementById('cart-count').textContent = count + (count === 1 ? ' item selected' : ' items selected');
+  document.getElementById('cart-count').textContent = count + ' عنصر مختار';
   document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
 }
 
@@ -265,11 +270,11 @@ async function submitOrder() {
   statusEl.textContent = '';
   statusEl.className = 'status';
 
-  if (!name) { statusEl.textContent = 'Please enter your name.'; statusEl.className = 'status err'; return; }
-  if (items.length === 0) { statusEl.textContent = 'Add at least one item.'; statusEl.className = 'status err'; return; }
+  if (!name) { statusEl.textContent = 'الرجاء إدخال اسمك.'; statusEl.className = 'status err'; return; }
+  if (items.length === 0) { statusEl.textContent = 'الرجاء إضافة عنصر واحد على الأقل.'; statusEl.className = 'status err'; return; }
 
   btn.disabled = true;
-  btn.textContent = 'Sending…';
+  btn.textContent = 'جارٍ الإرسال…';
 
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
@@ -280,23 +285,23 @@ async function submitOrder() {
     const result = await res.json();
 
     if (result.ok) {
-      statusEl.textContent = 'Order sent — thanks, ' + name + '! Total: $' + result.total;
+      statusEl.textContent = 'تم إرسال الطلب — شكرًا ' + name + '! الإجمالي: $' + result.total;
       statusEl.className = 'status ok';
       Object.keys(qty).forEach(id => qty[id] = 0);
       renderTable();
       renderCartSummary();
       nameInput.value = '';
       notesInput.value = '';
-      totalsLoadedOnce = false; // so totals refetch next time that tab opens
+      totalsLoadedOnce = false; // refetch totals next time that tab opens
     } else {
       throw new Error(result.error || 'Unknown error');
     }
   } catch (err) {
-    statusEl.textContent = 'Something went wrong — try again.';
+    statusEl.textContent = 'حدث خطأ ما — حاول مرة أخرى.';
     statusEl.className = 'status err';
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Submit Order';
+    btn.textContent = 'إرسال الطلب';
   }
 }
 
@@ -309,7 +314,7 @@ async function loadTotals() {
 
   if (APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
     emptyNote.style.display = 'block';
-    emptyNote.innerHTML = '<div class="setup-warning">Add your Apps Script Web App URL to APPS_SCRIPT_URL at the top of the script in this file.</div>';
+    emptyNote.innerHTML = '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>';
     return;
   }
 
@@ -326,7 +331,7 @@ async function loadTotals() {
     if (!data.items || data.items.length === 0) {
       table.style.display = 'none';
       emptyNote.style.display = 'block';
-      emptyNote.textContent = 'No orders submitted yet.';
+      emptyNote.textContent = 'لم يتم تقديم أي طلبات بعد.';
     } else {
       table.style.display = 'table';
       emptyNote.style.display = 'none';
@@ -335,16 +340,16 @@ async function loadTotals() {
         .map(item => `
           <tr>
             <td>${escapeHtml(item.name)}</td>
-            <td class="num-cell">${item.qty}</td>
-            <td class="num-cell">$${item.total}</td>
+            <td class="num-cell num">${item.qty}</td>
+            <td class="num-cell num">$${item.total}</td>
           </tr>
         `).join('');
     }
 
-    updatedEl.textContent = 'Last refreshed ' + new Date().toLocaleTimeString();
+    updatedEl.textContent = 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG-u-nu-latn');
   } catch (err) {
     emptyNote.style.display = 'block';
-    emptyNote.innerHTML = '<div class="setup-warning">Could not load totals. Check the Apps Script URL.</div>';
+    emptyNote.innerHTML = '<div class="setup-warning">تعذر تحميل الإجماليات. تحقق من رابط Apps Script.</div>';
   }
 }
 
