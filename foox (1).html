@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today's Order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green-deep:#1c2b22;
+    --green-panel:#24352a;
+    --green-panel-2:#2c3f31;
+    --gold:#e8a33d;
+    --gold-soft:#f0c274;
+    --cream:#f3efe2;
+    --cream-dim:#c9d1c6;
+    --line:#3c4d40;
+    --danger:#d9694f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--green-deep);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:32px 20px 80px;
+  }
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+    margin-bottom:28px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(28px, 5vw, 40px);
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .date{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--gold-soft);
+    font-size:14px;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width:760px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  .menu-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .item{
+    background:var(--green-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .item-info{display:flex; flex-direction:column; gap:2px;}
+  .item-name{font-weight:600; font-size:15.5px;}
+  .item-price{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--cream-dim);
+    font-size:13px;
+  }
+  .stepper{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--green-deep);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:4px;
+  }
+  .stepper button{
+    width:28px; height:28px;
+    border-radius:6px;
+    border:none;
+    background:transparent;
+    color:var(--gold-soft);
+    font-size:17px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .stepper button:hover{background:var(--green-panel-2);}
+  .stepper button:focus-visible, .stepper input:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  .stepper span{
+    min-width:18px;
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+  }
+
+  /* Ticket / cart */
+  .ticket{
+    background:var(--cream);
+    color:#20291f;
+    border-radius:6px;
+    padding:22px 20px 20px;
+    font-family:'IBM Plex Mono', monospace;
+    position:sticky;
+    top:24px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.35);
+  }
+  .ticket h2{
+    font-family:'Fraunces', serif;
+    font-size:20px;
+    margin:0 0 4px;
+    font-weight:600;
+    color:#20291f;
+  }
+  .ticket .sub{
+    font-size:11px;
+    color:#5c6a58;
+    margin-bottom:14px;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+  }
+  .ticket-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:13.5px;
+    padding:5px 0;
+    border-bottom:1px dashed #b9c2b3;
+  }
+  .ticket-empty{
+    font-size:13px;
+    color:#6b7a67;
+    padding:12px 0;
+    text-align:center;
+  }
+  .ticket-total{
+    display:flex;
+    justify-content:space-between;
+    font-size:16px;
+    font-weight:600;
+    padding-top:12px;
+    margin-top:6px;
+    border-top:2px solid #20291f;
+  }
+  .field{
+    margin-top:16px;
+  }
+  .field label{
+    display:block;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:#5c6a58;
+    margin-bottom:5px;
+  }
+  .field input, .field textarea{
+    width:100%;
+    font-family:'Work Sans', sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border-radius:6px;
+    border:1px solid #b9c2b3;
+    background:#fffdf8;
+    color:#20291f;
+    resize:none;
+  }
+  .field textarea{min-height:52px;}
+
+  .submit-btn{
+    width:100%;
+    margin-top:18px;
+    padding:13px;
+    border:none;
+    border-radius:8px;
+    background:var(--green-deep);
+    color:var(--gold-soft);
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    transition:transform 0.08s ease, background 0.15s ease;
+  }
+  .submit-btn:hover{background:#14201a;}
+  .submit-btn:active{transform:scale(0.98);}
+  .submit-btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  .status{
+    margin-top:12px;
+    font-size:13px;
+    font-family:'Work Sans', sans-serif;
+    text-align:center;
+  }
+  .status.ok{color:#2f5d3a;}
+  .status.err{color:var(--danger);}
+
+  .loading, .setup-warning{
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--cream-dim);
+    font-size:14px;
+    padding:20px 0;
+  }
+  .setup-warning{
+    background:var(--green-panel);
+    border:1px solid var(--gold);
+    border-radius:8px;
+    padding:16px;
+    color:var(--gold-soft);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Today's Order</h1>
+    <div class="date" id="today"></div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <div id="menu" class="menu-list">
+        <div class="loading">Loading menu…</div>
+      </div>
+    </div>
+
+    <div class="ticket">
+      <h2>Order Ticket</h2>
+      <div class="sub" id="ticket-count">0 items</div>
+      <div id="ticket-lines"><div class="ticket-empty">Nothing added yet</div></div>
+      <div class="ticket-total">
+        <span>Total</span>
+        <span id="ticket-total">$0.00</span>
+      </div>
+
+      <div class="field">
+        <label for="name">Your name</label>
+        <input id="name" type="text" placeholder="e.g. Sam">
+      </div>
+      <div class="field">
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" placeholder="No onions, extra sauce…"></textarea>
+      </div>
+
+      <button class="submit-btn" id="submit-btn">Submit Order</button>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== SET THIS AFTER YOU DEPLOY THE APPS SCRIPT WEB APP ======
+const APPS_SCRIPT_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+// =================================================================
+
+let MENU = [];
+const cart = {}; // id -> qty
+
+document.getElementById('today').textContent = new Date().toLocaleDateString(undefined, {
+  weekday: 'long', month: 'long', day: 'numeric'
+});
+
+async function loadMenu() {
+  const menuEl = document.getElementById('menu');
+  if (APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+    menuEl.innerHTML = '<div class="setup-warning">Add your Apps Script Web App URL to APPS_SCRIPT_URL at the top of the script in this file to load the menu.</div>';
+    return;
+  }
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    const data = await res.json();
+    MENU = data.menu || [];
+    renderMenu();
+  } catch (err) {
+    menuEl.innerHTML = '<div class="setup-warning">Could not load the menu. Check the Apps Script URL and that the deployment is set to "Anyone" access.</div>';
+  }
+}
+
+function renderMenu() {
+  const menuEl = document.getElementById('menu');
+  menuEl.innerHTML = '';
+  MENU.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'item';
+    row.innerHTML = `
+      <div class="item-info">
+        <span class="item-name">${escapeHtml(item.name)}</span>
+        <span class="item-price">$${Number(item.price).toFixed(2)}</span>
+      </div>
+      <div class="stepper">
+        <button aria-label="Remove one ${escapeHtml(item.name)}" data-action="dec" data-id="${item.id}">−</button>
+        <span id="qty-${item.id}">0</span>
+        <button aria-label="Add one ${escapeHtml(item.name)}" data-action="inc" data-id="${item.id}">+</button>
+      </div>
+    `;
+    menuEl.appendChild(row);
+  });
+  menuEl.addEventListener('click', onStepperClick);
+}
+
+function onStepperClick(e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+  const current = cart[id] || 0;
+  const next = action === 'inc' ? current + 1 : Math.max(0, current - 1);
+  cart[id] = next;
+  document.getElementById('qty-' + id).textContent = next;
+  renderTicket();
+}
+
+function renderTicket() {
+  const linesEl = document.getElementById('ticket-lines');
+  const entries = Object.entries(cart).filter(([, qty]) => qty > 0);
+  let total = 0;
+  let count = 0;
+
+  if (entries.length === 0) {
+    linesEl.innerHTML = '<div class="ticket-empty">Nothing added yet</div>';
+  } else {
+    linesEl.innerHTML = entries.map(([id, qty]) => {
+      const item = MENU.find(m => m.id === id);
+      if (!item) return '';
+      const lineTotal = item.price * qty;
+      total += lineTotal;
+      count += qty;
+      return `<div class="ticket-line"><span>${escapeHtml(item.name)} ×${qty}</span><span>$${lineTotal.toFixed(2)}</span></div>`;
+    }).join('');
+  }
+
+  document.getElementById('ticket-count').textContent = count + (count === 1 ? ' item' : ' items');
+  document.getElementById('ticket-total').textContent = '$' + total.toFixed(2);
+}
+
+async function submitOrder() {
+  const nameInput = document.getElementById('name');
+  const notesInput = document.getElementById('notes');
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('submit-btn');
+
+  const name = nameInput.value.trim();
+  const items = Object.entries(cart)
+    .filter(([, qty]) => qty > 0)
+    .map(([id, qty]) => ({ id, qty }));
+
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+
+  if (!name) {
+    statusEl.textContent = 'Please enter your name.';
+    statusEl.className = 'status err';
+    return;
+  }
+  if (items.length === 0) {
+    statusEl.textContent = 'Add at least one item.';
+    statusEl.className = 'status err';
+    return;
+  }
+  if (APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+    statusEl.textContent = 'Apps Script URL is not set up yet.';
+    statusEl.className = 'status err';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight
+      body: JSON.stringify({ name, items, notes: notesInput.value.trim() })
+    });
+    const result = await res.json();
+
+    if (result.ok) {
+      statusEl.textContent = 'Order sent — thanks, ' + name + '!';
+      statusEl.className = 'status ok';
+      // reset
+      Object.keys(cart).forEach(id => cart[id] = 0);
+      document.querySelectorAll('[id^="qty-"]').forEach(el => el.textContent = '0');
+      renderTicket();
+      nameInput.value = '';
+      notesInput.value = '';
+    } else {
+      throw new Error(result.error || 'Unknown error');
+    }
+  } catch (err) {
+    statusEl.textContent = 'Something went wrong — try again.';
+    statusEl.className = 'status err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Order';
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById('submit-btn').addEventListener('click', submitOrder);
+loadMenu();
+</script>
+</body>
+</html>
