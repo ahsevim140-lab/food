@@ -121,7 +121,7 @@
 
   /* Totals matrix */
   .matrix-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--panel);}
-  table.matrix{width:100%; border-collapse:collapse; font-size:13.5px; min-width:600px;}
+  table.matrix{width:100%; border-collapse:collapse; font-size:13.5px; min-width:820px;}
   table.matrix th, table.matrix td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:center;}
   table.matrix thead th{
     font-family:'Cairo', sans-serif; font-size:12px; font-weight:600; color:var(--text-dim);
@@ -143,7 +143,7 @@
   .totals-footer .row:last-child{border-bottom:none; padding-top:12px; font-weight:600; font-size:16px;}
   .totals-footer .row .num{font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;}
   .fee-input{
-    width:100px; font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center;
+    width:130px; font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center;
     padding:6px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--text); direction:ltr;
   }
 
@@ -268,9 +268,11 @@
     <div class="empty-note" id="totals-empty-note" style="display:none;">لم يتم تقديم أي طلبات بعد.</div>
 
     <div class="totals-footer">
-      <div class="row"><span>الإجمالي الفرعي</span><span class="num" id="subtotal">$0.00</span></div>
-      <div class="row"><span>رسوم التوصيل</span><input type="number" min="0" step="0.5" class="fee-input" id="delivery-fee" value="0" placeholder="0.00"></div>
-      <div class="row"><span>الإجمالي الكلي</span><span class="num" id="full-total">$0.00</span></div>
+      <div class="row"><span>الإجمالي الفرعي (الأصناف)</span><span class="num" id="subtotal">0 ل.س</span></div>
+      <div class="row"><span>عدد المشاركين</span><span class="num" id="participant-count">0</span></div>
+      <div class="row"><span>رسوم التوصيل للشخص الواحد</span><input type="number" min="0" step="100" class="fee-input" id="delivery-fee-per-person" value="0" placeholder="0"></div>
+      <div class="row"><span>إجمالي رسوم التوصيل</span><span class="num" id="delivery-total">0 ل.س</span></div>
+      <div class="row"><span>الإجمالي الكلي</span><span class="num" id="full-total">0 ل.س</span></div>
     </div>
 
     <div class="refresh-row">
@@ -295,6 +297,12 @@ const qty = {};              // itemId -> quantity, persists across item changes
 let countdownTimer = null;
 let totalsGrandTotal = 0;
 let sessionsCache = [];
+let personRows = []; // per-employee subtotal/participation for the current totals view
+
+function money(amount) {
+  const n = Number(amount) || 0;
+  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ل.س';
+}
 
 document.getElementById('today').textContent = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
   weekday: 'long', month: 'long', day: 'numeric'
@@ -528,7 +536,7 @@ function renderItemPanel() {
   panel.style.display = 'flex';
   emptyNote.style.display = 'none';
   document.getElementById('item-name').textContent = item.name;
-  document.getElementById('item-price').textContent = '$' + Number(item.price).toFixed(2);
+  document.getElementById('item-price').textContent = money(item.price);
 
   const qtyInput = document.getElementById('item-qty');
   qtyInput.value = qty[id] || '';
@@ -594,7 +602,7 @@ function renderCartSummary() {
     if (q > 0 && itemsById[id]) { count += q; total += q * itemsById[id].price; }
   });
   document.getElementById('cart-count').textContent = count + ' عنصر مختار';
-  document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
+  document.getElementById('cart-total').textContent = money(total);
 }
 
 async function submitOrder() {
@@ -625,7 +633,7 @@ async function submitOrder() {
     const result = await res.json();
 
     if (result.ok) {
-      statusEl.textContent = 'تم إرسال الطلب — شكرًا ' + name + '! الإجمالي: $' + result.total;
+      statusEl.textContent = 'تم إرسال الطلب — شكرًا ' + name + '! الإجمالي: ' + money(result.total);
       statusEl.className = 'status ok';
       Object.keys(qty).forEach(id => qty[id] = 0);
       renderItemPanel();
@@ -719,45 +727,88 @@ function renderMatrix(data) {
   table.style.display = 'table';
   emptyNote.style.display = 'none';
 
+  // Per-employee subtotal + whether they ordered anything this session
+  personRows = employees.map(name => {
+    const row = matrix[name] || {};
+    let subtotal = 0;
+    items.forEach(item => { subtotal += (row[item.id] || 0) * item.price; });
+    return { name, subtotal, participated: subtotal > 0 };
+  });
+
   // Header row
   const headRow = document.getElementById('matrix-head-row');
   headRow.innerHTML = '<th class="name-col">الاسم</th>' + items.map(item => `
     <th><span class="item-head-name">${escapeHtml(item.name)}</span></th>
-  `).join('');
+  `).join('') + '<th>المجموع الفرعي</th><th>رسوم التوصيل</th><th>الإجمالي</th>';
 
   // Body rows (one per employee)
   const bodyEl = document.getElementById('matrix-body');
   if (employees.length === 0) {
-    bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}</tr>`;
+    bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
   } else {
-    bodyEl.innerHTML = employees.map(name => {
-      const row = matrix[name] || {};
+    bodyEl.innerHTML = personRows.map((p, i) => {
+      const row = matrix[p.name] || {};
       const cells = items.map(item => {
         const q = row[item.id];
         return `<td class="qty-cell">${q ? q : ''}</td>`;
       }).join('');
-      return `<tr><td class="name-col">${escapeHtml(name)}</td>${cells}</tr>`;
+      return `<tr>
+        <td class="name-col">${escapeHtml(p.name)}</td>
+        ${cells}
+        <td class="qty-cell" id="subtotal-cell-${i}">${money(p.subtotal)}</td>
+        <td class="qty-cell" id="fee-cell-${i}">—</td>
+        <td class="qty-cell" id="total-cell-${i}">—</td>
+      </tr>`;
     }).join('');
   }
 
   // Footer summary rows: price, qty sold, total per item
   const footEl = document.getElementById('matrix-foot');
   const priceRow = '<tr class="summary-row"><td class="name-col">السعر</td>' +
-    items.map(item => `<td>$${Number(item.price).toFixed(2)}</td>`).join('') + '</tr>';
+    items.map(item => `<td>${money(item.price)}</td>`).join('') + '<td></td><td></td><td></td></tr>';
   const qtyRow = '<tr class="summary-row"><td class="name-col">الكمية</td>' +
-    items.map(item => `<td>${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '</tr>';
+    items.map(item => `<td>${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '<td></td><td></td><td></td></tr>';
   const totalRow = '<tr class="summary-row"><td class="name-col">الإجمالي</td>' +
-    items.map(item => `<td>$${(totalsByItem[item.id] || {}).total || '0.00'}</td>`).join('') + '</tr>';
+    items.map(item => `<td>${money((totalsByItem[item.id] || {}).total || 0)}</td>`).join('') +
+    '<td id="summary-subtotal-total"></td><td id="summary-fee-total"></td><td id="summary-total-total"></td></tr>';
   footEl.innerHTML = priceRow + qtyRow + totalRow;
 
   totalsGrandTotal = Number(data.grandTotal) || 0;
-  updateFooterTotals();
+  updatePersonFeeColumns();
 }
 
-function updateFooterTotals() {
-  const fee = Number(document.getElementById('delivery-fee').value) || 0;
-  document.getElementById('subtotal').textContent = '$' + totalsGrandTotal.toFixed(2);
-  document.getElementById('full-total').textContent = '$' + (totalsGrandTotal + fee).toFixed(2);
+function updatePersonFeeColumns() {
+  const feePerPerson = Number(document.getElementById('delivery-fee-per-person').value) || 0;
+  let participantCount = 0;
+  let deliveryTotal = 0;
+
+  personRows.forEach((p, i) => {
+    const feeCell = document.getElementById('fee-cell-' + i);
+    const totalCell = document.getElementById('total-cell-' + i);
+    if (!feeCell || !totalCell) return;
+
+    if (p.participated) {
+      participantCount++;
+      deliveryTotal += feePerPerson;
+      feeCell.textContent = money(feePerPerson);
+      totalCell.textContent = money(p.subtotal + feePerPerson);
+    } else {
+      feeCell.textContent = '—';
+      totalCell.textContent = money(p.subtotal);
+    }
+  });
+
+  document.getElementById('participant-count').textContent = participantCount;
+  document.getElementById('subtotal').textContent = money(totalsGrandTotal);
+  document.getElementById('delivery-total').textContent = money(deliveryTotal);
+  document.getElementById('full-total').textContent = money(totalsGrandTotal + deliveryTotal);
+
+  const subtotalColTotal = document.getElementById('summary-subtotal-total');
+  const feeColTotal = document.getElementById('summary-fee-total');
+  const totalColTotal = document.getElementById('summary-total-total');
+  if (subtotalColTotal) subtotalColTotal.textContent = money(totalsGrandTotal);
+  if (feeColTotal) feeColTotal.textContent = money(deliveryTotal);
+  if (totalColTotal) totalColTotal.textContent = money(totalsGrandTotal + deliveryTotal);
 }
 
 function escapeHtml(str) {
@@ -785,7 +836,7 @@ document.getElementById('end-session-pin').addEventListener('keydown', (e) => {
 });
 document.getElementById('submit-btn').addEventListener('click', submitOrder);
 document.getElementById('refresh-btn').addEventListener('click', () => loadTotals(document.getElementById('session-picker').value));
-document.getElementById('delivery-fee').addEventListener('input', updateFooterTotals);
+document.getElementById('delivery-fee-per-person').addEventListener('input', updatePersonFeeColumns);
 
 initOrder();
 setInterval(() => {
