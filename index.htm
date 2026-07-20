@@ -10,7 +10,7 @@
   :root{
     --bg:#f4ead4; --panel:#fffaf0; --panel-2:#f0e3c5;
     --line:#ddc9a0; --text:#3b2a1e; --text-dim:#8a7355;
-    --rust:#a8452e; --rust-soft:#c1614a; --mustard:#a67a26; --danger:#a8402e; --good:#5c7a3f;
+    --rust:#a8452e; --rust-soft:#c1614a; --mustard:#a67a26; --danger:#a8402e;
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--bg); color:var(--text); font-family:'Cairo', sans-serif; min-height:100vh;}
@@ -42,13 +42,34 @@
     background:var(--panel); border:1px solid var(--line); border-radius:10px;
     padding:16px; display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:16px;
   }
-  .item-panel .name{font-size:15px;}
+  .item-panel .name{font-size:15px; flex:1;}
   .item-panel .price{font-family:'IBM Plex Mono', monospace; color:var(--mustard); font-size:14px; direction:ltr;}
   .qty-input{
-    width:70px; font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center;
+    width:60px; font-family:'IBM Plex Mono', monospace; font-size:15px; text-align:center;
     padding:8px 6px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--text);
   }
   .qty-input:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible{outline:2px solid var(--rust); outline-offset:1px;}
+  .add-btn{
+    font-family:'Cairo', sans-serif; font-size:13px; font-weight:600; padding:9px 14px;
+    border-radius:6px; border:none; background:var(--rust); color:#fff; cursor:pointer; white-space:nowrap;
+  }
+  .add-btn:hover{background:var(--rust-soft);}
+
+  .order-list{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    margin-bottom:16px; overflow:hidden;
+  }
+  .order-list .order-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:11px 14px; border-bottom:1px solid var(--line); font-size:14px;
+  }
+  .order-list .order-row:last-child{border-bottom:none;}
+  .order-list .order-row .oname{flex:1;}
+  .order-list .order-row .oqty{font-family:'IBM Plex Mono', monospace; color:var(--text-dim); font-size:13px; direction:ltr;}
+  .order-list .order-row .oline{font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr; white-space:nowrap;}
+  .order-list .order-row .oremove{
+    border:none; background:transparent; color:var(--danger); font-size:18px; line-height:1; cursor:pointer; padding:0 4px;
+  }
 
   .cart-summary{
     background:var(--panel); border:1px solid var(--line); border-radius:10px;
@@ -57,71 +78,24 @@
   }
   .cart-summary strong{color:var(--rust); font-size:15px; font-family:'IBM Plex Mono', monospace; direction:ltr; unicode-bidi:embed;}
 
-  .submit-btn, .start-btn{
+  .submit-btn{
     width:100%; padding:14px; border:none; border-radius:8px; background:var(--rust); color:#fff;
     font-family:'Cairo', sans-serif; font-weight:600; font-size:15px; cursor:pointer;
     transition:transform 0.08s ease, background 0.15s ease;
   }
-  .submit-btn:hover, .start-btn:hover{background:var(--rust-soft);}
-  .submit-btn:active, .start-btn:active{transform:scale(0.98);}
-  .submit-btn:disabled, .start-btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .submit-btn:hover{background:var(--rust-soft);}
+  .submit-btn:active{transform:scale(0.98);}
+  .submit-btn:disabled{opacity:0.5; cursor:not-allowed;}
 
   .status{margin-top:12px; font-size:13.5px; text-align:center;}
-  .status.ok{color:var(--good);}
+  .status.ok{color:#5c7a3f;}
   .status.err{color:var(--danger);}
   .loading, .setup-warning, .empty-note{font-family:'Cairo', sans-serif; color:var(--text-dim); font-size:14px; padding:16px 0;}
   .setup-warning{background:var(--panel); border:1px solid var(--rust); border-radius:8px; padding:16px; color:var(--rust);}
 
-  /* Session panel (no active session) */
-  .session-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px;
-  }
-  .session-card h2{font-size:16px; margin:0 0 4px; font-weight:600;}
-  .session-card p{font-size:13px; color:var(--text-dim); margin:0 0 18px;}
-
-  /* Active session header */
-  .session-active-bar{
-    display:flex; justify-content:space-between; align-items:center; gap:12px;
-    background:var(--panel-2); border:1px solid var(--line); border-radius:10px;
-    padding:14px 16px; margin-bottom:12px; flex-wrap:wrap;
-  }
-  .session-active-bar .info .restaurant{font-weight:600; font-size:16px;}
-  .session-active-bar .info .category{font-size:12px; color:var(--text-dim);}
-  .session-active-bar .right{display:flex; align-items:center; gap:12px;}
-  .end-session-btn{
-    font-family:'Cairo', sans-serif; font-size:12px; padding:6px 12px; border-radius:8px;
-    border:1px solid var(--rust); background:transparent; color:var(--rust); cursor:pointer;
-  }
-  .end-session-btn:hover{background:var(--rust); color:#fff;}
-  .end-session-panel{
-    background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:20px;
-    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-  }
-  .end-session-panel input[type="password"]{
-    flex:1; min-width:120px; font-family:'IBM Plex Mono', monospace; font-size:14px; padding:9px 10px;
-    border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--text); direction:ltr; text-align:center;
-  }
-  .end-session-panel button{
-    font-family:'Cairo', sans-serif; font-size:13px; font-weight:600; padding:9px 14px; border-radius:8px; cursor:pointer; border:none;
-  }
-  .end-session-panel .confirm-btn{background:var(--rust); color:#fff;}
-  .end-session-panel .cancel-btn{background:transparent; color:var(--text-dim); border:1px solid var(--line);}
-  .countdown{
-    font-family:'IBM Plex Mono', monospace; font-size:20px; font-weight:600; color:var(--rust);
-    direction:ltr; white-space:nowrap;
-  }
-  .countdown.low{color:var(--danger); animation:pulse 1s infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-
-  .locked-card{
-    background:var(--panel); border:1px solid var(--rust); border-radius:10px; padding:22px; text-align:center;
-  }
-  .locked-card .big{font-size:16px; font-weight:600; color:var(--rust); margin-bottom:6px;}
-  .locked-card p{font-size:13px; color:var(--text-dim); margin:0;}
-
   /* Totals matrix */
   .matrix-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--panel);}
-  table.matrix{width:100%; border-collapse:collapse; font-size:13.5px; min-width:820px;}
+  table.matrix{width:100%; border-collapse:collapse; font-size:13.5px; min-width:600px;}
   table.matrix th, table.matrix td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:center;}
   table.matrix thead th{
     font-family:'Cairo', sans-serif; font-size:12px; font-weight:600; color:var(--text-dim);
@@ -143,7 +117,7 @@
   .totals-footer .row:last-child{border-bottom:none; padding-top:12px; font-weight:600; font-size:16px;}
   .totals-footer .row .num{font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;}
   .fee-input{
-    width:130px; font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center;
+    width:100px; font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center;
     padding:6px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--text); direction:ltr;
   }
 
@@ -154,12 +128,6 @@
   }
   .refresh-btn:hover{background:var(--panel-2);}
   .updated{font-family:'Cairo', sans-serif; font-size:12px; color:var(--text-dim);}
-
-  .session-pill{
-    display:inline-block; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; margin-inline-start:8px;
-  }
-  .session-pill.active{background:#e4efd9; color:var(--good);}
-  .session-pill.ended{background:var(--panel-2); color:var(--text-dim);}
 </style>
 </head>
 <body>
@@ -177,87 +145,51 @@
 
   <!-- ORDER VIEW -->
   <div id="view-order" class="view active">
-
-    <!-- 1) No active session: start one -->
-    <div id="start-session-card" class="session-card" style="display:none;">
-      <h2>لا توجد جلسة طلب نشطة</h2>
-      <p>اختر الفئة والمطعم لبدء جلسة طلب مدتها 45 دقيقة يمكن للجميع الطلب خلالها.</p>
-      <div class="field">
-        <label for="start-category">الفئة الرئيسية</label>
-        <select id="start-category"><option>جارٍ التحميل…</option></select>
-      </div>
-      <div class="field">
-        <label for="start-restaurant">المطعم</label>
-        <select id="start-restaurant"><option>اختر الفئة أولاً</option></select>
-      </div>
-      <button class="start-btn" id="start-session-btn">ابدأ الجلسة (45 دقيقة)</button>
-      <div class="status" id="start-status"></div>
+    <div class="field">
+      <label for="category">الفئة الرئيسية</label>
+      <select id="category"><option>جارٍ التحميل…</option></select>
     </div>
 
-    <!-- 2) Session just ended, locked -->
-    <div id="locked-card" class="locked-card" style="display:none;">
-      <div class="big">انتهت الجلسة</div>
-      <p>لا يمكن تقديم طلبات جديدة الآن. يمكن لأي شخص بدء جلسة جديدة.</p>
+    <div class="field">
+      <label for="restaurant">المطعم</label>
+      <select id="restaurant"><option>اختر الفئة أولاً</option></select>
     </div>
 
-    <!-- 3) Active session: ordering form -->
-    <div id="active-order" style="display:none;">
-      <div class="session-active-bar">
-        <div class="info">
-          <div class="restaurant" id="active-restaurant-name"></div>
-          <div class="category" id="active-category-name"></div>
-        </div>
-        <div class="right">
-          <div class="countdown" id="countdown">45:00</div>
-          <button class="end-session-btn" id="end-session-toggle-btn">إنهاء الجلسة</button>
-        </div>
-      </div>
-
-      <div id="end-session-panel" class="end-session-panel" style="display:none;">
-        <input type="password" id="end-session-pin" placeholder="أدخل الرمز" inputmode="numeric">
-        <button class="confirm-btn" id="end-session-confirm-btn">تأكيد الإنهاء</button>
-        <button class="cancel-btn" id="end-session-cancel-btn">إلغاء</button>
-        <div class="status" id="end-session-status" style="width:100%; margin:0;"></div>
-      </div>
-
-      <div class="field">
-        <label for="item">الصنف</label>
-        <select id="item"><option>جارٍ التحميل…</option></select>
-      </div>
-
-      <div id="item-panel" class="item-panel" style="display:none;">
-        <span class="name" id="item-name"></span>
-        <span class="price" id="item-price"></span>
-        <input type="number" min="0" step="1" class="qty-input" id="item-qty" placeholder="0">
-      </div>
-      <div id="empty-note" class="empty-note" style="display:none;"></div>
-
-      <div class="cart-summary">
-        <span id="cart-count">0 عنصر مختار</span>
-        <span>الإجمالي: <strong id="cart-total">$0.00</strong></span>
-      </div>
-
-      <div class="field">
-        <label for="name">اسمك</label>
-        <select id="name"><option value="">اختر اسمك</option></select>
-      </div>
-      <div class="field">
-        <label for="notes">ملاحظات (اختياري)</label>
-        <textarea id="notes" placeholder="بدون بصل، صلصة إضافية…"></textarea>
-      </div>
-
-      <button class="submit-btn" id="submit-btn">إرسال الطلب</button>
-      <div class="status" id="status"></div>
+    <div class="field">
+      <label for="item">الصنف</label>
+      <select id="item"><option>اختر المطعم أولاً</option></select>
     </div>
+
+    <div id="item-panel" class="item-panel" style="display:none;">
+      <span class="name" id="item-name"></span>
+      <span class="price" id="item-price"></span>
+      <input type="number" min="0" step="1" class="qty-input" id="item-qty" placeholder="0">
+      <button type="button" class="add-btn" id="add-item-btn">إضافة</button>
+    </div>
+    <div id="empty-note" class="empty-note" style="display:none;"></div>
+
+    <div id="order-list" class="order-list" style="display:none;"></div>
+
+    <div class="cart-summary">
+      <span id="cart-count">0 عنصر مختار</span>
+      <span>الإجمالي: <strong id="cart-total">$0.00</strong></span>
+    </div>
+
+    <div class="field">
+      <label for="name">اسمك</label>
+      <select id="name"><option value="">اختر اسمك</option></select>
+    </div>
+    <div class="field">
+      <label for="notes">ملاحظات (اختياري)</label>
+      <textarea id="notes" placeholder="بدون بصل، صلصة إضافية…"></textarea>
+    </div>
+
+    <button class="submit-btn" id="submit-btn">إرسال الطلب</button>
+    <div class="status" id="status"></div>
   </div>
 
   <!-- TOTALS VIEW -->
   <div id="view-totals" class="view">
-    <div class="field">
-      <label for="session-picker">الجلسة</label>
-      <select id="session-picker"><option>جارٍ التحميل…</option></select>
-    </div>
-
     <div class="matrix-wrap">
       <table class="matrix" id="matrix-table">
         <thead><tr id="matrix-head-row"><th class="name-col">الاسم</th></tr></thead>
@@ -268,11 +200,9 @@
     <div class="empty-note" id="totals-empty-note" style="display:none;">لم يتم تقديم أي طلبات بعد.</div>
 
     <div class="totals-footer">
-      <div class="row"><span>الإجمالي الفرعي (الأصناف)</span><span class="num" id="subtotal">0 ل.س</span></div>
-      <div class="row"><span>عدد المشاركين</span><span class="num" id="participant-count">0</span></div>
-      <div class="row"><span>رسوم التوصيل للشخص الواحد</span><input type="number" min="0" step="100" class="fee-input" id="delivery-fee-per-person" value="0" placeholder="0"></div>
-      <div class="row"><span>إجمالي رسوم التوصيل</span><span class="num" id="delivery-total">0 ل.س</span></div>
-      <div class="row"><span>الإجمالي الكلي</span><span class="num" id="full-total">0 ل.س</span></div>
+      <div class="row"><span>الإجمالي الفرعي</span><span class="num" id="subtotal">$0.00</span></div>
+      <div class="row"><span>رسوم التوصيل</span><input type="number" min="0" step="0.5" class="fee-input" id="delivery-fee" value="0" placeholder="0.00"></div>
+      <div class="row"><span>الإجمالي الكلي</span><span class="num" id="full-total">$0.00</span></div>
     </div>
 
     <div class="refresh-row">
@@ -287,22 +217,12 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-OyJGz_1v3wCisooJ_bQSWMj_UYH2W8XtHuWT8L7F0-Q2ot4Yvag956h8kadnn7t4/exec';
 // ========================================================================
 
-const SESSION_POLL_MS = 6000;   // how often we check session status
-const TOTALS_POLL_MS = 4 * 60 * 60 * 1000;
-
-let MENU = [];              // nested menu, used only for the "start session" pickers
-let currentSession = null;  // active session object from the server, or null
-let clockOffsetMs = 0;      // serverNow - Date.now(), so countdown isn't thrown off by device clock drift
-const qty = {};              // itemId -> quantity, persists across item changes
-let countdownTimer = null;
-let totalsGrandTotal = 0;
-let sessionsCache = [];
-let personRows = []; // per-employee subtotal/participation for the current totals view
-
-function money(amount) {
-  const n = Number(amount) || 0;
-  return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ل.س';
-}
+const FOUR_HOURS = 4 * 60 * 60 * 1000;
+let MENU = []; // nested: [{category, restaurants:[{restaurant, items:[{id,name,price}]}]}]
+const flatMenu = {}; // id -> {name, price, category, restaurant}
+const qty = {}; // id -> quantity, persists across dropdown changes
+let totalsLoadedOnce = false;
+let latestGrandTotal = 0;
 
 document.getElementById('today').textContent = new Date().toLocaleDateString('ar-EG-u-nu-latn', {
   weekday: 'long', month: 'long', day: 'numeric'
@@ -314,185 +234,29 @@ function switchTab(tab) {
   document.getElementById('tab-order').classList.toggle('active', tab === 'order');
   document.getElementById('tab-totals').classList.toggle('active', tab === 'totals');
   document.getElementById('page-title').textContent = tab === 'order' ? 'طلب غداء المكتب' : 'إجماليات الطلبات';
-  if (tab === 'totals') loadSessionsList();
+  if (tab === 'totals' && !totalsLoadedOnce) loadTotals();
 }
 
-function setupWarningVisible() {
-  return APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0;
-}
-
-// ---------------------------------------------------------------------
-// ORDER VIEW
-// ---------------------------------------------------------------------
-
+// ---- Order view ----
 async function initOrder() {
-  if (setupWarningVisible()) {
-    document.getElementById('start-session-card').style.display = 'block';
-    document.getElementById('start-session-card').innerHTML =
-      '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>';
+  if (APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+    document.getElementById('category').innerHTML = '<option>الإعداد مطلوب</option>';
+    document.getElementById('empty-note').style.display = 'block';
+    document.getElementById('empty-note').innerHTML = '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف لتحميل القائمة.</div>';
     return;
   }
-  await loadMenuForStartPickers();
-  await refreshSessionStatus();
-  setInterval(refreshSessionStatus, SESSION_POLL_MS);
-}
-
-async function loadMenuForStartPickers() {
   try {
     const res = await fetch(APPS_SCRIPT_URL);
     const data = await res.json();
     MENU = data.menu || [];
-    populateStartCategories();
+    MENU.forEach(catGroup => catGroup.restaurants.forEach(restGroup => restGroup.items.forEach(item => {
+      flatMenu[item.id] = { name: item.name, price: item.price, category: catGroup.category, restaurant: restGroup.restaurant };
+    })));
+    populateCategories();
+    populateEmployees(data.employees || []);
   } catch (err) {
-    document.getElementById('start-category').innerHTML = '<option>تعذر تحميل القائمة</option>';
+    document.getElementById('category').innerHTML = '<option>تعذر تحميل القائمة</option>';
   }
-}
-
-function populateStartCategories() {
-  const select = document.getElementById('start-category');
-  if (MENU.length === 0) {
-    select.innerHTML = '<option>لا توجد أصناف بعد</option>';
-    return;
-  }
-  select.innerHTML = MENU.map(g => `<option value="${escapeHtml(g.category)}">${escapeHtml(g.category)}</option>`).join('');
-  select.onchange = populateStartRestaurants;
-  populateStartRestaurants();
-}
-
-function populateStartRestaurants() {
-  const category = document.getElementById('start-category').value;
-  const catGroup = MENU.find(g => g.category === category);
-  const select = document.getElementById('start-restaurant');
-  if (!catGroup || catGroup.restaurants.length === 0) {
-    select.innerHTML = '<option>لا توجد مطاعم</option>';
-    return;
-  }
-  select.innerHTML = catGroup.restaurants.map(r => `<option value="${escapeHtml(r.restaurant)}">${escapeHtml(r.restaurant)}</option>`).join('');
-}
-
-async function startSession() {
-  const btn = document.getElementById('start-session-btn');
-  const statusEl = document.getElementById('start-status');
-  const category = document.getElementById('start-category').value;
-  const restaurant = document.getElementById('start-restaurant').value;
-
-  statusEl.textContent = '';
-  statusEl.className = 'status';
-
-  if (!category || !restaurant) {
-    statusEl.textContent = 'الرجاء اختيار الفئة والمطعم.';
-    statusEl.className = 'status err';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'جارٍ البدء…';
-
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'start', category, restaurant })
-    });
-    const result = await res.json();
-    if (result.ok) {
-      applySessionPayload({ active: true, session: result.session, now: new Date().toISOString(), employees: [] });
-      await refreshSessionStatus(); // pull employee list too
-    } else {
-      statusEl.textContent = result.error || 'تعذر بدء الجلسة.';
-      statusEl.className = 'status err';
-    }
-  } catch (err) {
-    statusEl.textContent = 'حدث خطأ ما — حاول مرة أخرى.';
-    statusEl.className = 'status err';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'ابدأ الجلسة (45 دقيقة)';
-  }
-}
-
-async function refreshSessionStatus() {
-  if (setupWarningVisible()) return;
-  try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=session');
-    const data = await res.json();
-    applySessionPayload(data);
-  } catch (err) {
-    // silent — keep whatever state we last had, try again on next poll
-  }
-}
-
-function applySessionPayload(data) {
-  clockOffsetMs = new Date(data.now).getTime() - Date.now();
-
-  const startCard = document.getElementById('start-session-card');
-  const lockedCard = document.getElementById('locked-card');
-  const activeOrder = document.getElementById('active-order');
-
-  if (!data.active) {
-    // Was it active a moment ago (now ended) or was there never a session?
-    const wasActive = !!currentSession;
-    currentSession = null;
-    stopCountdown();
-    activeOrder.style.display = 'none';
-    document.getElementById('end-session-panel').style.display = 'none';
-    document.getElementById('end-session-pin').value = '';
-    if (wasActive) {
-      lockedCard.style.display = 'block';
-      startCard.style.display = 'none';
-      // after a short pause, flip to the start-session screen so people can begin the next round
-      setTimeout(() => {
-        lockedCard.style.display = 'none';
-        if (!currentSession) startCard.style.display = 'block';
-      }, 4000);
-    } else {
-      lockedCard.style.display = 'none';
-      startCard.style.display = 'block';
-    }
-    return;
-  }
-
-  const isNewSession = !currentSession || currentSession.id !== data.session.id;
-  currentSession = data.session;
-
-  startCard.style.display = 'none';
-  lockedCard.style.display = 'none';
-  activeOrder.style.display = 'block';
-
-  document.getElementById('active-restaurant-name').textContent = data.session.restaurant;
-  document.getElementById('active-category-name').textContent = data.session.category;
-
-  if (isNewSession) {
-    Object.keys(qty).forEach(id => delete qty[id]);
-    populateItemSelect(data.session.items);
-  }
-  if (data.employees && data.employees.length) populateEmployees(data.employees);
-
-  startCountdown(new Date(data.session.endTime));
-}
-
-function startCountdown(endTime) {
-  stopCountdown();
-  const el = document.getElementById('countdown');
-  const tick = () => {
-    const remainingMs = endTime.getTime() - (Date.now() + clockOffsetMs);
-    if (remainingMs <= 0) {
-      el.textContent = '00:00';
-      refreshSessionStatus();
-      return;
-    }
-    const totalSec = Math.floor(remainingMs / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-    el.classList.toggle('low', totalSec <= 60);
-  };
-  tick();
-  countdownTimer = setInterval(tick, 1000);
-}
-
-function stopCountdown() {
-  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
 }
 
 function populateEmployees(names) {
@@ -505,29 +269,52 @@ function populateEmployees(names) {
     names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
 }
 
-function populateItemSelect(items) {
-  const select = document.getElementById('item');
-  if (!items || items.length === 0) {
-    select.innerHTML = '<option>لا توجد عناصر</option>';
-    hideItemPanel('لا توجد عناصر لهذا المطعم.');
+function populateCategories() {
+  const select = document.getElementById('category');
+  if (MENU.length === 0) {
+    select.innerHTML = '<option>لا توجد أصناف بعد</option>';
     return;
   }
-  select.innerHTML = items.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
+  select.innerHTML = MENU.map(g => `<option value="${escapeHtml(g.category)}">${escapeHtml(g.category)}</option>`).join('');
+  select.onchange = populateRestaurants;
+  populateRestaurants();
+}
+
+function populateRestaurants() {
+  const category = document.getElementById('category').value;
+  const catGroup = MENU.find(g => g.category === category);
+  const select = document.getElementById('restaurant');
+
+  if (!catGroup || catGroup.restaurants.length === 0) {
+    select.innerHTML = '<option>لا توجد مطاعم</option>';
+    populateItems();
+    return;
+  }
+  select.innerHTML = catGroup.restaurants.map(r => `<option value="${escapeHtml(r.restaurant)}">${escapeHtml(r.restaurant)}</option>`).join('');
+  select.onchange = populateItems;
+  populateItems();
+}
+
+function populateItems() {
+  const category = document.getElementById('category').value;
+  const restaurant = document.getElementById('restaurant').value;
+  const catGroup = MENU.find(g => g.category === category);
+  const restGroup = catGroup ? catGroup.restaurants.find(r => r.restaurant === restaurant) : null;
+  const select = document.getElementById('item');
+
+  if (!restGroup || restGroup.items.length === 0) {
+    select.innerHTML = '<option>لا توجد عناصر</option>';
+    hideItemPanel('لا توجد عناصر لهذا الاختيار.');
+    return;
+  }
+  select.innerHTML = restGroup.items.map(item => `<option value="${item.id}">${escapeHtml(item.name)}</option>`).join('');
   select.onchange = renderItemPanel;
   renderItemPanel();
 }
 
-function currentSessionItemsById() {
-  const map = {};
-  if (currentSession && currentSession.items) {
-    currentSession.items.forEach(item => { map[item.id] = item; });
-  }
-  return map;
-}
-
 function renderItemPanel() {
   const id = document.getElementById('item').value;
-  const item = currentSessionItemsById()[id];
+  const item = flatMenu[id];
   const panel = document.getElementById('item-panel');
   const emptyNote = document.getElementById('empty-note');
 
@@ -536,55 +323,57 @@ function renderItemPanel() {
   panel.style.display = 'flex';
   emptyNote.style.display = 'none';
   document.getElementById('item-name').textContent = item.name;
-  document.getElementById('item-price').textContent = money(item.price);
+  document.getElementById('item-price').textContent = '$' + Number(item.price).toFixed(2);
 
   const qtyInput = document.getElementById('item-qty');
   qtyInput.value = qty[id] || '';
-  qtyInput.oninput = () => {
+
+  const addBtn = document.getElementById('add-item-btn');
+  addBtn.onclick = () => {
     const val = Math.max(0, parseInt(qtyInput.value, 10) || 0);
+    if (val <= 0) return;
     qty[id] = val;
+    qtyInput.value = '';
+    renderOrderList();
     renderCartSummary();
   };
 }
 
-async function endSessionNow() {
-  const pinInput = document.getElementById('end-session-pin');
-  const statusEl = document.getElementById('end-session-status');
-  const confirmBtn = document.getElementById('end-session-confirm-btn');
+function renderOrderList() {
+  const listEl = document.getElementById('order-list');
+  const ids = Object.keys(qty).filter(id => qty[id] > 0 && flatMenu[id]);
 
-  statusEl.textContent = '';
-  statusEl.className = 'status';
-
-  if (!currentSession) return;
-  const pin = pinInput.value.trim();
-  if (!pin) {
-    statusEl.textContent = 'الرجاء إدخال الرمز.';
-    statusEl.className = 'status err';
+  if (ids.length === 0) {
+    listEl.style.display = 'none';
+    listEl.innerHTML = '';
     return;
   }
 
-  confirmBtn.disabled = true;
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'end', sessionId: currentSession.id, pin })
+  listEl.style.display = 'block';
+  listEl.innerHTML = ids.map(id => {
+    const item = flatMenu[id];
+    const lineTotal = item.price * qty[id];
+    return `
+      <div class="order-row">
+        <span class="oname">${escapeHtml(item.name)}</span>
+        <span class="oqty">×${qty[id]}</span>
+        <span class="oline">$${lineTotal.toFixed(2)}</span>
+        <button type="button" class="oremove" data-id="${id}" aria-label="إزالة ${escapeHtml(item.name)}">×</button>
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.oremove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      qty[btn.dataset.id] = 0;
+      renderOrderList();
+      renderCartSummary();
+      // keep the qty input in sync if that item is still the one showing
+      if (document.getElementById('item').value === btn.dataset.id) {
+        document.getElementById('item-qty').value = '';
+      }
     });
-    const result = await res.json();
-    if (result.ok) {
-      pinInput.value = '';
-      document.getElementById('end-session-panel').style.display = 'none';
-      refreshSessionStatus();
-    } else {
-      statusEl.textContent = result.error || 'تعذر إنهاء الجلسة.';
-      statusEl.className = 'status err';
-    }
-  } catch (err) {
-    statusEl.textContent = 'حدث خطأ ما — حاول مرة أخرى.';
-    statusEl.className = 'status err';
-  } finally {
-    confirmBtn.disabled = false;
-  }
+  });
 }
 
 function hideItemPanel(message) {
@@ -596,13 +385,12 @@ function hideItemPanel(message) {
 
 function renderCartSummary() {
   let count = 0, total = 0;
-  const itemsById = currentSessionItemsById();
   Object.keys(qty).forEach(id => {
     const q = qty[id] || 0;
-    if (q > 0 && itemsById[id]) { count += q; total += q * itemsById[id].price; }
+    if (q > 0 && flatMenu[id]) { count += q; total += q * flatMenu[id].price; }
   });
   document.getElementById('cart-count').textContent = count + ' عنصر مختار';
-  document.getElementById('cart-total').textContent = money(total);
+  document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
 }
 
 async function submitOrder() {
@@ -617,7 +405,6 @@ async function submitOrder() {
   statusEl.textContent = '';
   statusEl.className = 'status';
 
-  if (!currentSession) { statusEl.textContent = 'انتهت الجلسة.'; statusEl.className = 'status err'; return; }
   if (!name) { statusEl.textContent = 'الرجاء اختيار اسمك.'; statusEl.className = 'status err'; return; }
   if (items.length === 0) { statusEl.textContent = 'الرجاء إضافة عنصر واحد على الأقل.'; statusEl.className = 'status err'; return; }
 
@@ -628,21 +415,22 @@ async function submitOrder() {
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ sessionId: currentSession.id, name, items, notes: notesInput.value.trim() })
+      body: JSON.stringify({ name, items, notes: notesInput.value.trim() })
     });
     const result = await res.json();
 
     if (result.ok) {
-      statusEl.textContent = 'تم إرسال الطلب — شكرًا ' + name + '! الإجمالي: ' + money(result.total);
+      statusEl.textContent = 'تم إرسال الطلب — شكرًا ' + name + '! الإجمالي: $' + result.total;
       statusEl.className = 'status ok';
       Object.keys(qty).forEach(id => qty[id] = 0);
       renderItemPanel();
+      renderOrderList();
       renderCartSummary();
       nameSelect.value = '';
       notesInput.value = '';
+      totalsLoadedOnce = false;
     } else {
-      statusEl.textContent = result.error || 'تعذر إرسال الطلب.';
-      statusEl.className = 'status err';
+      throw new Error(result.error || 'Unknown error');
     }
   } catch (err) {
     statusEl.textContent = 'حدث خطأ ما — حاول مرة أخرى.';
@@ -653,59 +441,28 @@ async function submitOrder() {
   }
 }
 
-// ---------------------------------------------------------------------
-// TOTALS VIEW
-// ---------------------------------------------------------------------
+// ---- Totals view (employee x item matrix) ----
+async function loadTotals() {
+  const emptyNote = document.getElementById('totals-empty-note');
+  const table = document.getElementById('matrix-table');
 
-async function loadSessionsList() {
-  const picker = document.getElementById('session-picker');
-
-  if (setupWarningVisible()) {
-    picker.innerHTML = '<option>الإعداد مطلوب</option>';
-    showTotalsMessage('<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>');
+  if (APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+    table.style.display = 'none';
+    emptyNote.style.display = 'block';
+    emptyNote.innerHTML = '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>';
     return;
   }
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=sessions');
+    const res = await fetch(APPS_SCRIPT_URL + '?action=totals');
     const data = await res.json();
-    sessionsCache = data.sessions || [];
-
-    if (sessionsCache.length === 0) {
-      picker.innerHTML = '<option>لا توجد جلسات بعد</option>';
-      showTotalsMessage('لم تبدأ أي جلسة طلب بعد.');
-      return;
-    }
-
-    picker.innerHTML = sessionsCache.map(s => {
-      const dt = new Date(s.startTime);
-      const label = s.restaurant + ' — ' + s.category + ' — ' + dt.toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) + (s.active ? ' (نشطة)' : '');
-      return `<option value="${s.id}">${escapeHtml(label)}</option>`;
-    }).join('');
-    picker.onchange = () => loadTotals(picker.value);
-    loadTotals(picker.value);
-  } catch (err) {
-    picker.innerHTML = '<option>تعذر التحميل</option>';
-    showTotalsMessage('<div class="setup-warning">تعذر تحميل قائمة الجلسات. تحقق من رابط Apps Script.</div>');
-  }
-}
-
-function showTotalsMessage(html) {
-  document.getElementById('matrix-table').style.display = 'none';
-  const note = document.getElementById('totals-empty-note');
-  note.style.display = 'block';
-  note.innerHTML = html;
-}
-
-async function loadTotals(sessionId) {
-  if (!sessionId) return;
-  try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=totals&sessionId=' + encodeURIComponent(sessionId));
-    const data = await res.json();
+    totalsLoadedOnce = true;
     renderMatrix(data);
     document.getElementById('updated').textContent = 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG-u-nu-latn');
   } catch (err) {
-    showTotalsMessage('<div class="setup-warning">تعذر تحميل الإجماليات. تحقق من رابط Apps Script.</div>');
+    table.style.display = 'none';
+    emptyNote.style.display = 'block';
+    emptyNote.innerHTML = '<div class="setup-warning">تعذر تحميل الإجماليات. تحقق من رابط Apps Script.</div>';
   }
 }
 
@@ -720,95 +477,52 @@ function renderMatrix(data) {
   if (items.length === 0) {
     table.style.display = 'none';
     emptyNote.style.display = 'block';
-    emptyNote.textContent = 'لا توجد أصناف لهذا المطعم.';
+    emptyNote.textContent = 'لا توجد أصناف في القائمة بعد.';
     return;
   }
 
   table.style.display = 'table';
   emptyNote.style.display = 'none';
 
-  // Per-employee subtotal + whether they ordered anything this session
-  personRows = employees.map(name => {
-    const row = matrix[name] || {};
-    let subtotal = 0;
-    items.forEach(item => { subtotal += (row[item.id] || 0) * item.price; });
-    return { name, subtotal, participated: subtotal > 0 };
-  });
-
   // Header row
   const headRow = document.getElementById('matrix-head-row');
   headRow.innerHTML = '<th class="name-col">الاسم</th>' + items.map(item => `
-    <th><span class="item-head-name">${escapeHtml(item.name)}</span></th>
-  `).join('') + '<th>المجموع الفرعي</th><th>رسوم التوصيل</th><th>الإجمالي</th>';
+    <th><span class="item-head-name">${escapeHtml(item.name)}</span><span class="item-head-sub">${escapeHtml(item.restaurant)}</span></th>
+  `).join('');
 
   // Body rows (one per employee)
   const bodyEl = document.getElementById('matrix-body');
   if (employees.length === 0) {
-    bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
+    bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}</tr>`;
   } else {
-    bodyEl.innerHTML = personRows.map((p, i) => {
-      const row = matrix[p.name] || {};
+    bodyEl.innerHTML = employees.map(name => {
+      const row = matrix[name] || {};
       const cells = items.map(item => {
         const q = row[item.id];
         return `<td class="qty-cell">${q ? q : ''}</td>`;
       }).join('');
-      return `<tr>
-        <td class="name-col">${escapeHtml(p.name)}</td>
-        ${cells}
-        <td class="qty-cell" id="subtotal-cell-${i}">${money(p.subtotal)}</td>
-        <td class="qty-cell" id="fee-cell-${i}">—</td>
-        <td class="qty-cell" id="total-cell-${i}">—</td>
-      </tr>`;
+      return `<tr><td class="name-col">${escapeHtml(name)}</td>${cells}</tr>`;
     }).join('');
   }
 
   // Footer summary rows: price, qty sold, total per item
   const footEl = document.getElementById('matrix-foot');
   const priceRow = '<tr class="summary-row"><td class="name-col">السعر</td>' +
-    items.map(item => `<td>${money(item.price)}</td>`).join('') + '<td></td><td></td><td></td></tr>';
+    items.map(item => `<td>$${Number(item.price).toFixed(2)}</td>`).join('') + '</tr>';
   const qtyRow = '<tr class="summary-row"><td class="name-col">الكمية</td>' +
-    items.map(item => `<td>${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '<td></td><td></td><td></td></tr>';
+    items.map(item => `<td>${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '</tr>';
   const totalRow = '<tr class="summary-row"><td class="name-col">الإجمالي</td>' +
-    items.map(item => `<td>${money((totalsByItem[item.id] || {}).total || 0)}</td>`).join('') +
-    '<td id="summary-subtotal-total"></td><td id="summary-fee-total"></td><td id="summary-total-total"></td></tr>';
+    items.map(item => `<td>$${(totalsByItem[item.id] || {}).total || '0.00'}</td>`).join('') + '</tr>';
   footEl.innerHTML = priceRow + qtyRow + totalRow;
 
-  totalsGrandTotal = Number(data.grandTotal) || 0;
-  updatePersonFeeColumns();
+  latestGrandTotal = Number(data.grandTotal) || 0;
+  updateFooterTotals();
 }
 
-function updatePersonFeeColumns() {
-  const feePerPerson = Number(document.getElementById('delivery-fee-per-person').value) || 0;
-  let participantCount = 0;
-  let deliveryTotal = 0;
-
-  personRows.forEach((p, i) => {
-    const feeCell = document.getElementById('fee-cell-' + i);
-    const totalCell = document.getElementById('total-cell-' + i);
-    if (!feeCell || !totalCell) return;
-
-    if (p.participated) {
-      participantCount++;
-      deliveryTotal += feePerPerson;
-      feeCell.textContent = money(feePerPerson);
-      totalCell.textContent = money(p.subtotal + feePerPerson);
-    } else {
-      feeCell.textContent = '—';
-      totalCell.textContent = money(p.subtotal);
-    }
-  });
-
-  document.getElementById('participant-count').textContent = participantCount;
-  document.getElementById('subtotal').textContent = money(totalsGrandTotal);
-  document.getElementById('delivery-total').textContent = money(deliveryTotal);
-  document.getElementById('full-total').textContent = money(totalsGrandTotal + deliveryTotal);
-
-  const subtotalColTotal = document.getElementById('summary-subtotal-total');
-  const feeColTotal = document.getElementById('summary-fee-total');
-  const totalColTotal = document.getElementById('summary-total-total');
-  if (subtotalColTotal) subtotalColTotal.textContent = money(totalsGrandTotal);
-  if (feeColTotal) feeColTotal.textContent = money(deliveryTotal);
-  if (totalColTotal) totalColTotal.textContent = money(totalsGrandTotal + deliveryTotal);
+function updateFooterTotals() {
+  const fee = Number(document.getElementById('delivery-fee').value) || 0;
+  document.getElementById('subtotal').textContent = '$' + latestGrandTotal.toFixed(2);
+  document.getElementById('full-total').textContent = '$' + (latestGrandTotal + fee).toFixed(2);
 }
 
 function escapeHtml(str) {
@@ -817,33 +531,12 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-document.getElementById('start-session-btn').addEventListener('click', startSession);
-document.getElementById('end-session-toggle-btn').addEventListener('click', () => {
-  const panel = document.getElementById('end-session-panel');
-  const showing = panel.style.display !== 'none';
-  panel.style.display = showing ? 'none' : 'flex';
-  document.getElementById('end-session-status').textContent = '';
-  if (!showing) document.getElementById('end-session-pin').focus();
-});
-document.getElementById('end-session-cancel-btn').addEventListener('click', () => {
-  document.getElementById('end-session-panel').style.display = 'none';
-  document.getElementById('end-session-pin').value = '';
-  document.getElementById('end-session-status').textContent = '';
-});
-document.getElementById('end-session-confirm-btn').addEventListener('click', endSessionNow);
-document.getElementById('end-session-pin').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') endSessionNow();
-});
 document.getElementById('submit-btn').addEventListener('click', submitOrder);
-document.getElementById('refresh-btn').addEventListener('click', () => loadTotals(document.getElementById('session-picker').value));
-document.getElementById('delivery-fee-per-person').addEventListener('input', updatePersonFeeColumns);
+document.getElementById('refresh-btn').addEventListener('click', loadTotals);
+document.getElementById('delivery-fee').addEventListener('input', updateFooterTotals);
 
 initOrder();
-setInterval(() => {
-  if (document.getElementById('view-totals').classList.contains('active')) {
-    loadTotals(document.getElementById('session-picker').value);
-  }
-}, TOTALS_POLL_MS);
+setInterval(loadTotals, FOUR_HOURS);
 </script>
 </body>
 </html>
