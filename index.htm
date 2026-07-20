@@ -265,6 +265,14 @@
         <div class="status" id="end-session-status" style="width:100%; margin:0;"></div>
       </div>
 
+      <div class="field name-field">
+        <label for="name-search">اسمك</label>
+        <input type="text" id="name-search" autocomplete="off" placeholder="اكتب أو اختر اسمك">
+        <input type="hidden" id="name">
+        <div id="name-options" class="name-options"></div>
+      </div>
+      <div id="existing-order-hint" class="existing-order-hint" style="display:none;"></div>
+
       <div class="field">
         <label>الأصناف</label>
       </div>
@@ -276,13 +284,6 @@
         <span>الإجمالي: <strong id="cart-total">$0.00</strong></span>
       </div>
 
-      <div class="field name-field">
-        <label for="name-search">اسمك</label>
-        <input type="text" id="name-search" autocomplete="off" placeholder="اكتب أو اختر اسمك">
-        <input type="hidden" id="name">
-        <div id="name-options" class="name-options"></div>
-      </div>
-      <div id="existing-order-hint" class="existing-order-hint" style="display:none;"></div>
       <div class="field">
         <label for="notes">ملاحظات (اختياري)</label>
         <textarea id="notes" placeholder="بدون بصل، صلصة إضافية…"></textarea>
@@ -312,8 +313,8 @@
     <div class="totals-footer">
       <div class="row"><span>الإجمالي الفرعي (الأصناف)</span><span class="num" id="subtotal">0 ل.س</span></div>
       <div class="row"><span>عدد المشاركين</span><span class="num" id="participant-count">0</span></div>
-      <div class="row"><span>رسوم التوصيل للشخص الواحد</span><input type="number" min="0" step="100" class="fee-input" id="delivery-fee-per-person" value="0" placeholder="0"></div>
-      <div class="row"><span>إجمالي رسوم التوصيل</span><span class="num" id="delivery-total">0 ل.س</span></div>
+      <div class="row"><span>إجمالي رسوم التوصيل</span><input type="number" min="0" step="100" class="fee-input" id="delivery-fee-total" value="0" placeholder="0"></div>
+      <div class="row"><span>رسوم التوصيل للشخص الواحد</span><span class="num" id="delivery-per-person">0 ل.س</span></div>
       <div class="row"><span>الإجمالي الكلي</span><span class="num" id="full-total">0 ل.س</span></div>
     </div>
 
@@ -587,15 +588,13 @@ async function loadMyOrderFor(name) {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=myOrder&sessionId=' + encodeURIComponent(currentSession.id) + '&name=' + encodeURIComponent(name));
     const data = await res.json();
-    const items = data.items || [];
-    const hasExisting = items.some(it => it.qty > 0);
+    const items = (data.items || []).filter(it => it.qty > 0);
 
-    setQtyFromExistingOrder(items);
-    document.getElementById('notes').value = data.notes || '';
-
-    if (hasExisting) {
+    if (items.length > 0) {
+      const lines = items.map(it => `${it.qty}× ${escapeHtml(it.name)}`).join('، ');
+      const orderTotal = items.reduce((sum, it) => sum + (it.lineTotal || 0), 0);
       hint.style.display = 'block';
-      hint.textContent = 'لديك طلب مسجل لهذه الجلسة — تم تحميله هنا، وإرساله مجددًا سيستبدل طلبك السابق.';
+      hint.innerHTML = `<strong>طلبك الحالي لهذه الجلسة:</strong> ${lines} — الإجمالي حتى الآن: ${money(orderTotal)}.<br>أي شيء تختاره أدناه يُضاف إلى هذا الطلب.`;
     } else {
       hint.style.display = 'none';
     }
@@ -648,16 +647,6 @@ function stepQty(id, delta) {
   qty[id] = next;
   const input = document.getElementById('qty-input-' + id);
   if (input) input.value = next || '';
-  renderCartSummary();
-}
-
-function setQtyFromExistingOrder(items) {
-  Object.keys(qty).forEach(id => delete qty[id]);
-  (items || []).forEach(it => { if (it.qty > 0) qty[it.id] = it.qty; });
-  document.querySelectorAll('.stepper-qty').forEach(input => {
-    const id = input.id.replace('qty-input-', '');
-    input.value = qty[id] || '';
-  });
   renderCartSummary();
 }
 
@@ -748,15 +737,13 @@ async function submitOrder() {
     const result = await res.json();
 
     if (result.ok) {
-      statusEl.textContent = 'تم إرسال الطلب — شكرًا ' + name + '! الإجمالي: ' + money(result.total);
+      statusEl.textContent = 'تمت إضافة الطلب — شكرًا ' + name + '! إجمالي هذه الإضافة: ' + money(result.total);
       statusEl.className = 'status ok';
       Object.keys(qty).forEach(id => qty[id] = 0);
       document.querySelectorAll('.stepper-qty').forEach(input => { input.value = ''; });
       renderCartSummary();
-      nameInput.value = '';
-      document.getElementById('name-search').value = '';
-      document.getElementById('existing-order-hint').style.display = 'none';
       notesInput.value = '';
+      loadMyOrderFor(name); // refresh the "your current order" summary to include what was just added
     } else {
       statusEl.textContent = result.error || 'تعذر إرسال الطلب.';
       statusEl.className = 'status err';
@@ -921,9 +908,9 @@ function renderMatrix(data) {
 }
 
 function updatePersonFeeColumns() {
-  const feePerPerson = Number(document.getElementById('delivery-fee-per-person').value) || 0;
-  let participantCount = 0;
-  let deliveryTotal = 0;
+  const deliveryTotal = Number(document.getElementById('delivery-fee-total').value) || 0;
+  const participantCount = personRows.filter(p => p.participated).length;
+  const perPersonFee = participantCount > 0 ? deliveryTotal / participantCount : 0;
 
   personRows.forEach((p, i) => {
     const feeCell = document.getElementById('fee-cell-' + i);
@@ -931,10 +918,8 @@ function updatePersonFeeColumns() {
     if (!feeCell || !totalCell) return;
 
     if (p.participated) {
-      participantCount++;
-      deliveryTotal += feePerPerson;
-      feeCell.textContent = money(feePerPerson);
-      totalCell.textContent = money(p.subtotal + feePerPerson);
+      feeCell.textContent = money(perPersonFee);
+      totalCell.textContent = money(p.subtotal + perPersonFee);
     } else {
       feeCell.textContent = '—';
       totalCell.textContent = money(p.subtotal);
@@ -943,7 +928,7 @@ function updatePersonFeeColumns() {
 
   document.getElementById('participant-count').textContent = participantCount;
   document.getElementById('subtotal').textContent = money(totalsGrandTotal);
-  document.getElementById('delivery-total').textContent = money(deliveryTotal);
+  document.getElementById('delivery-per-person').textContent = money(perPersonFee);
   document.getElementById('full-total').textContent = money(totalsGrandTotal + deliveryTotal);
 
   const subtotalColTotal = document.getElementById('summary-subtotal-total');
@@ -979,7 +964,7 @@ document.getElementById('end-session-pin').addEventListener('keydown', (e) => {
 });
 document.getElementById('submit-btn').addEventListener('click', submitOrder);
 document.getElementById('refresh-btn').addEventListener('click', () => loadTotals(document.getElementById('session-picker').value));
-document.getElementById('delivery-fee-per-person').addEventListener('input', updatePersonFeeColumns);
+document.getElementById('delivery-fee-total').addEventListener('input', updatePersonFeeColumns);
 
 document.getElementById('name-search').addEventListener('focus', () => renderNameOptions(document.getElementById('name-search').value));
 document.getElementById('name-search').addEventListener('input', () => {
