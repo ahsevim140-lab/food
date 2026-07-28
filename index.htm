@@ -334,7 +334,10 @@
     </div>
 
     <div class="refresh-row">
-      <button class="refresh-btn" id="refresh-btn">تحديث الآن</button>
+      <div style="display:flex; gap:8px;">
+        <button class="refresh-btn" id="refresh-btn">تحديث الآن</button>
+        <button class="refresh-btn" id="export-btn">⭳ تصدير CSV</button>
+      </div>
       <span class="updated" id="updated"></span>
     </div>
   </div>
@@ -363,6 +366,7 @@ let totalsGrandTotal = 0;
 let sessionsCache = [];
 let personRows = []; // per-employee subtotal/participation for the current totals view
 let employeesList = []; // names for the searchable name field
+let lastTotalsData = null; // most recent /totals response, kept around for CSV export
 
 function money(amount) {
   const n = Number(amount) || 0;
@@ -852,6 +856,7 @@ async function loadTotals(sessionId) {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=totals&sessionId=' + encodeURIComponent(sessionId));
     const data = await res.json();
+    lastTotalsData = data;
     renderMatrix(data);
     document.getElementById('updated').textContent = 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG-u-nu-latn');
   } catch (err) {
@@ -946,7 +951,7 @@ function updatePersonFeeColumns() {
     }
   });
 
-  document.getElementById('participant-count').textContent = participantCount;
+  document.getElementById('participant-count').textContent = participantCount + ' / ' + personRows.length;
   document.getElementById('subtotal').textContent = money(totalsGrandTotal);
   document.getElementById('delivery-per-person').textContent = money(perPersonFee);
   document.getElementById('full-total').textContent = money(totalsGrandTotal + deliveryTotal);
@@ -963,6 +968,93 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ---------------------------------------------------------------------
+// EXPORT (CSV)
+// ---------------------------------------------------------------------
+
+function csvEscape(value) {
+  const str = value === null || value === undefined ? '' : String(value);
+  if (/[",\n]/.test(str)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function exportTotalsCSV() {
+  if (!lastTotalsData || !lastTotalsData.items || lastTotalsData.items.length === 0) {
+    const note = document.getElementById('updated');
+    const prev = note.textContent;
+    note.textContent = 'لا توجد بيانات لتصديرها.';
+    setTimeout(() => { note.textContent = prev; }, 2500);
+    return;
+  }
+
+  const data = lastTotalsData;
+  const items = data.items;
+  const matrix = data.matrix || {};
+  const totalsByItem = data.totalsByItem || {};
+  const deliveryTotal = Number(document.getElementById('delivery-fee-total').value) || 0;
+  const participantCount = personRows.filter(p => p.participated).length;
+  const perPersonFee = participantCount > 0 ? deliveryTotal / participantCount : 0;
+
+  const rows = [];
+
+  // Header row
+  rows.push(['الاسم', ...items.map(it => it.name), 'المجموع الفرعي', 'رسوم التوصيل', 'الإجمالي']);
+
+  // One row per person
+  personRows.forEach(p => {
+    const row = matrix[p.name] || {};
+    const cells = items.map(it => row[it.id] || 0);
+    const fee = p.participated ? perPersonFee : 0;
+    const total = p.participated ? p.subtotal + perPersonFee : p.subtotal;
+    rows.push([p.name, ...cells, p.subtotal.toFixed(2), fee.toFixed(2), total.toFixed(2)]);
+  });
+
+  // Per-item summary rows
+  rows.push(['السعر', ...items.map(it => it.price), '', '', '']);
+  rows.push(['الكمية', ...items.map(it => (totalsByItem[it.id] || {}).qty || 0), '', '', '']);
+  rows.push([
+    'الإجمالي',
+    ...items.map(it => ((totalsByItem[it.id] || {}).total || 0).toFixed(2)),
+    totalsGrandTotal.toFixed(2),
+    deliveryTotal.toFixed(2),
+    (totalsGrandTotal + deliveryTotal).toFixed(2),
+  ]);
+
+  // Overall summary block
+  rows.push([]);
+  rows.push(['عدد المشاركين', participantCount + ' / ' + personRows.length]);
+  rows.push(['الإجمالي الفرعي (الأصناف)', totalsGrandTotal.toFixed(2)]);
+  rows.push(['إجمالي رسوم التوصيل', deliveryTotal.toFixed(2)]);
+  rows.push(['رسوم التوصيل للشخص الواحد', perPersonFee.toFixed(2)]);
+  rows.push(['الإجمالي الكلي', (totalsGrandTotal + deliveryTotal).toFixed(2)]);
+
+  const csvContent = rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+
+  const picker = document.getElementById('session-picker');
+  const selectedOption = picker.options[picker.selectedIndex];
+  const label = selectedOption ? selectedOption.textContent : 'session';
+  const safeLabel = label.replace(/[\\/:*?"<>|]/g, '').trim();
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `طلب-${safeLabel}-${dateStr}.csv`;
+
+  downloadCSV(filename, csvContent);
+}
+
+function downloadCSV(filename, csvContent) {
+  // \uFEFF (BOM) so Excel opens the Arabic text as UTF-8 instead of mangling it
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 document.getElementById('start-session-btn').addEventListener('click', startSession);
@@ -984,6 +1076,7 @@ document.getElementById('end-session-pin').addEventListener('keydown', (e) => {
 });
 document.getElementById('submit-btn').addEventListener('click', submitOrder);
 document.getElementById('refresh-btn').addEventListener('click', () => loadTotals(document.getElementById('session-picker').value));
+document.getElementById('export-btn').addEventListener('click', exportTotalsCSV);
 document.getElementById('delivery-fee-total').addEventListener('input', updatePersonFeeColumns);
 
 document.getElementById('name-search').addEventListener('focus', () => renderNameOptions(document.getElementById('name-search').value));
