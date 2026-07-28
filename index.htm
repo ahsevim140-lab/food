@@ -345,9 +345,14 @@
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-OyJGz_1v3wCisooJ_bQSWMj_UYH2W8XtHuWT8L7F0-Q2ot4Yvag956h8kadnn7t4/exec';
 // ========================================================================
 
-const SESSION_POLL_MS = 6000;   // how often we check session status
-const TOTALS_POLL_MS = 8000;    // keep totals live while someone's watching that tab
-const SESSIONS_LIST_POLL_MS = 20000; // pick up newly started/ended sessions in the picker
+// Polling intervals. The backend now caches "live" responses (session
+// status / totals) for ~5 seconds server-side (see CACHE_TTL_LIVE_SEC in
+// Code.gs), so polling much faster than that just re-fetches the same
+// cached data without making anything feel more up to date — it only adds
+// load. These intervals are tuned to match that cache window.
+const SESSION_POLL_MS = 15000;        // was 6000 — countdown itself still ticks locally every 1s
+const TOTALS_POLL_MS = 12000;         // was 8000
+const SESSIONS_LIST_POLL_MS = 30000;  // was 20000 — new/ended sessions rarely need faster than this
 
 let MENU = [];              // nested menu, used only for the "start session" pickers
 let currentSession = null;  // active session object from the server, or null
