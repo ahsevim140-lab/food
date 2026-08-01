@@ -231,6 +231,8 @@
   <!-- ORDER VIEW -->
   <div id="view-order" class="view active">
 
+    <div id="initial-loading" class="loading">جارٍ تحميل حالة الجلسة…</div>
+
     <!-- 1) No active session: start one -->
     <div id="start-session-card" class="session-card" style="display:none;">
       <h2>لا توجد جلسة طلب نشطة</h2>
@@ -357,6 +359,9 @@ const SESSION_POLL_MS = 15000;        // was 6000 — countdown itself still tic
 const TOTALS_POLL_MS = 12000;         // was 8000
 const SESSIONS_LIST_POLL_MS = 30000;  // was 20000 — new/ended sessions rarely need faster than this
 
+// How many of the most recent sessions to show in the totals dropdown.
+const TOTALS_SESSION_LIMIT = 2;
+
 let MENU = [];              // nested menu, used only for the "start session" pickers
 let currentSession = null;  // active session object from the server, or null
 let clockOffsetMs = 0;      // serverNow - Date.now(), so countdown isn't thrown off by device clock drift
@@ -396,16 +401,26 @@ function setupWarningVisible() {
 
 async function initOrder() {
   if (setupWarningVisible()) {
+    document.getElementById('initial-loading').style.display = 'none';
     document.getElementById('start-session-card').style.display = 'block';
     document.getElementById('start-session-card').innerHTML =
       '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>';
     return;
   }
+  // If the very first request is slow (Apps Script cold start can take a
+  // few seconds), let the person know it's not actually stuck.
+  const slowNoticeTimer = setTimeout(() => {
+    const loadingEl = document.getElementById('initial-loading');
+    if (loadingEl && loadingEl.style.display !== 'none') {
+      loadingEl.textContent = 'لا يزال التحميل جاريًا… قد يستغرق هذا حتى نصف دقيقة عند أول فتح لليوم.';
+    }
+  }, 5000);
   // Check session status FIRST. Most page loads land during an active
   // session, in which case the menu (only needed for the "start a session"
   // pickers) never needs to be fetched at all — that's one fewer request
   // competing for the server on every single page load.
   await refreshSessionStatus();
+  clearTimeout(slowNoticeTimer);
   setInterval(refreshSessionStatus, SESSION_POLL_MS);
 }
 
@@ -491,11 +506,18 @@ async function refreshSessionStatus() {
     const data = await res.json();
     applySessionPayload(data);
   } catch (err) {
-    // silent — keep whatever state we last had, try again on next poll
+    // If we've never successfully loaded anything yet, don't leave the
+    // page blank forever — show an error with a retry button instead.
+    const loadingEl = document.getElementById('initial-loading');
+    if (loadingEl && loadingEl.style.display !== 'none') {
+      loadingEl.innerHTML = 'تعذر الاتصال بالخادم. <button class="refresh-btn" onclick="refreshSessionStatus()" style="margin-inline-start:8px;">إعادة المحاولة</button>';
+    }
+    // otherwise: silent — keep whatever state we last had, try again on next poll
   }
 }
 
 function applySessionPayload(data) {
+  document.getElementById('initial-loading').style.display = 'none';
   clockOffsetMs = new Date(data.now).getTime() - Date.now();
 
   const startCard = document.getElementById('start-session-card');
@@ -822,7 +844,9 @@ async function loadSessionsList() {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=sessions');
     const data = await res.json();
-    sessionsCache = data.sessions || [];
+    // listSessions() on the backend already returns newest-first, so
+    // taking the first N here gives the most recent sessions.
+    sessionsCache = (data.sessions || []).slice(0, TOTALS_SESSION_LIMIT);
 
     if (sessionsCache.length === 0) {
       picker.innerHTML = '<option>لا توجد جلسات بعد</option>';
@@ -840,7 +864,8 @@ async function loadSessionsList() {
 }
 
 // Quietly refreshes the session picker's options (new/ended sessions) while
-// keeping whichever session the person currently has selected, if it still exists.
+// keeping whichever session the person currently has selected, if it still
+// exists among the most recent TOTALS_SESSION_LIMIT sessions.
 async function refreshSessionsListPreserveSelection() {
   if (setupWarningVisible()) return;
   const picker = document.getElementById('session-picker');
@@ -849,7 +874,7 @@ async function refreshSessionsListPreserveSelection() {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=sessions');
     const data = await res.json();
-    sessionsCache = data.sessions || [];
+    sessionsCache = (data.sessions || []).slice(0, TOTALS_SESSION_LIMIT);
     if (sessionsCache.length === 0) return;
 
     picker.innerHTML = sessionOptionsHtml(sessionsCache);
