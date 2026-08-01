@@ -401,7 +401,10 @@ async function initOrder() {
       '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>';
     return;
   }
-  await loadMenuForStartPickers();
+  // Check session status FIRST. Most page loads land during an active
+  // session, in which case the menu (only needed for the "start a session"
+  // pickers) never needs to be fetched at all — that's one fewer request
+  // competing for the server on every single page load.
   await refreshSessionStatus();
   setInterval(refreshSessionStatus, SESSION_POLL_MS);
 }
@@ -465,8 +468,9 @@ async function startSession() {
     });
     const result = await res.json();
     if (result.ok) {
-      applySessionPayload({ active: true, session: result.session, now: new Date().toISOString(), employees: [] });
-      await refreshSessionStatus(); // pull employee list too
+      // The "start" response already includes the employee list, so this
+      // is the only request we need — no second round trip to fetch it.
+      applySessionPayload({ active: true, session: result.session, now: new Date().toISOString(), employees: result.employees || [] });
     } else {
       statusEl.textContent = result.error || 'تعذر بدء الجلسة.';
       statusEl.className = 'status err';
@@ -509,6 +513,9 @@ function applySessionPayload(data) {
     document.getElementById('name').value = '';
     document.getElementById('name-search').value = '';
     document.getElementById('existing-order-hint').style.display = 'none';
+    // Only fetch the menu once we actually know we need the "start a
+    // session" pickers — not on every page load regardless of session state.
+    if (MENU.length === 0) loadMenuForStartPickers();
     if (wasActive) {
       lockedCard.style.display = 'block';
       startCard.style.display = 'none';
@@ -605,25 +612,33 @@ function selectName(name) {
   loadMyOrderFor(name);
 }
 
-async function loadMyOrderFor(name) {
+// Renders the "your current order so far" hint from a { items: [...] }
+// payload — shared by the initial name-selection lookup and by the
+// response we already get back from submitOrder (so submitting no longer
+// needs a second request just to refresh this hint).
+function renderMyOrderHint(items) {
   const hint = document.getElementById('existing-order-hint');
-  if (!currentSession || !name) { hint.style.display = 'none'; return; }
+  items = (items || []).filter(it => it.qty > 0);
+
+  if (items.length > 0) {
+    const lines = items.map(it => `${it.qty}× ${escapeHtml(it.name)}`).join('، ');
+    const orderTotal = items.reduce((sum, it) => sum + (it.lineTotal || 0), 0);
+    hint.style.display = 'block';
+    hint.innerHTML = `<strong>طلبك الحالي لهذه الجلسة:</strong> ${lines} — الإجمالي حتى الآن: ${money(orderTotal)}.<br>أي شيء تختاره أدناه يُضاف إلى هذا الطلب.`;
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+async function loadMyOrderFor(name) {
+  if (!currentSession || !name) { document.getElementById('existing-order-hint').style.display = 'none'; return; }
 
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=myOrder&sessionId=' + encodeURIComponent(currentSession.id) + '&name=' + encodeURIComponent(name));
     const data = await res.json();
-    const items = (data.items || []).filter(it => it.qty > 0);
-
-    if (items.length > 0) {
-      const lines = items.map(it => `${it.qty}× ${escapeHtml(it.name)}`).join('، ');
-      const orderTotal = items.reduce((sum, it) => sum + (it.lineTotal || 0), 0);
-      hint.style.display = 'block';
-      hint.innerHTML = `<strong>طلبك الحالي لهذه الجلسة:</strong> ${lines} — الإجمالي حتى الآن: ${money(orderTotal)}.<br>أي شيء تختاره أدناه يُضاف إلى هذا الطلب.`;
-    } else {
-      hint.style.display = 'none';
-    }
+    renderMyOrderHint(data.items);
   } catch (err) {
-    hint.style.display = 'none';
+    document.getElementById('existing-order-hint').style.display = 'none';
   }
 }
 
@@ -767,7 +782,9 @@ async function submitOrder() {
       document.querySelectorAll('.stepper-qty').forEach(input => { input.value = ''; });
       renderCartSummary();
       notesInput.value = '';
-      loadMyOrderFor(name); // refresh the "your current order" summary to include what was just added
+      // The submit response already carries the updated running order, so
+      // no second request is needed to refresh this hint.
+      renderMyOrderHint(result.myOrder ? result.myOrder.items : []);
     } else {
       statusEl.textContent = result.error || 'تعذر إرسال الطلب.';
       statusEl.className = 'status err';
