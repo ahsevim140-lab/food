@@ -345,19 +345,21 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-// ====== ضع رابط تطبيق الويب الكامل من Apps Script هنا بعد النشر ======
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-OyJGz_1v3wCisooJ_bQSWMj_UYH2W8XtHuWT8L7F0-Q2ot4Yvag956h8kadnn7t4/exec';
-// ========================================================================
+// ====== Fill these in from Supabase: Settings > Data API (URL) and Settings > API Keys (Publishable key) ======
+const SUPABASE_URL = 'https://jmqbsicjpncaycopnzde.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_CLq7XSVrudltwN9J5mXbOg_Iy5Ra9Dj';
+// =================================================================================================================
 
-// Polling intervals. The backend now caches "live" responses (session
-// status / totals) for ~5 seconds server-side (see CACHE_TTL_LIVE_SEC in
-// Code.gs), so polling much faster than that just re-fetches the same
-// cached data without making anything feel more up to date — it only adds
-// load. These intervals are tuned to match that cache window.
-const SESSION_POLL_MS = 15000;        // was 6000 — countdown itself still ticks locally every 1s
-const TOTALS_POLL_MS = 12000;         // was 8000
-const SESSIONS_LIST_POLL_MS = 30000;  // was 20000 — new/ended sessions rarely need faster than this
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Polling intervals — Supabase has no server-side "live" cache like the old
+// Apps Script version did, so these poll the database directly. Still kept
+// deliberately modest so several people's tabs don't hammer the DB.
+const SESSION_POLL_MS = 10000;        // countdown itself still ticks locally every 1s
+const TOTALS_POLL_MS = 8000;
+const SESSIONS_LIST_POLL_MS = 20000;  // new/ended sessions rarely need faster than this
 
 // How many of the most recent sessions to show in the totals dropdown.
 const TOTALS_SESSION_LIMIT = 2;
@@ -371,7 +373,7 @@ let totalsGrandTotal = 0;
 let sessionsCache = [];
 let personRows = []; // per-employee subtotal/participation for the current totals view
 let employeesList = []; // names for the searchable name field
-let lastTotalsData = null; // most recent /totals response, kept around for CSV export
+let lastTotalsData = null; // most recent totals payload, kept around for CSV export
 
 function money(amount) {
   const n = Number(amount) || 0;
@@ -392,7 +394,7 @@ function switchTab(tab) {
 }
 
 function setupWarningVisible() {
-  return APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0;
+  return SUPABASE_URL.indexOf('PASTE_YOUR') === 0;
 }
 
 // ---------------------------------------------------------------------
@@ -404,21 +406,15 @@ async function initOrder() {
     document.getElementById('initial-loading').style.display = 'none';
     document.getElementById('start-session-card').style.display = 'block';
     document.getElementById('start-session-card').innerHTML =
-      '<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>';
+      '<div class="setup-warning">أضف رابط مشروع Supabase (Project URL) إلى SUPABASE_URL في أعلى الكود بهذا الملف. تجده في Settings &gt; Data API.</div>';
     return;
   }
-  // If the very first request is slow (Apps Script cold start can take a
-  // few seconds), let the person know it's not actually stuck.
   const slowNoticeTimer = setTimeout(() => {
     const loadingEl = document.getElementById('initial-loading');
     if (loadingEl && loadingEl.style.display !== 'none') {
-      loadingEl.textContent = 'لا يزال التحميل جاريًا… قد يستغرق هذا حتى نصف دقيقة عند أول فتح لليوم.';
+      loadingEl.textContent = 'لا يزال التحميل جاريًا…';
     }
   }, 5000);
-  // Check session status FIRST. Most page loads land during an active
-  // session, in which case the menu (only needed for the "start a session"
-  // pickers) never needs to be fetched at all — that's one fewer request
-  // competing for the server on every single page load.
   await refreshSessionStatus();
   clearTimeout(slowNoticeTimer);
   setInterval(refreshSessionStatus, SESSION_POLL_MS);
@@ -426,13 +422,41 @@ async function initOrder() {
 
 async function loadMenuForStartPickers() {
   try {
-    const res = await fetch(APPS_SCRIPT_URL);
-    const data = await res.json();
-    MENU = data.menu || [];
+    const { data, error } = await supabase.from('menu').select('id, category, restaurant, item, price');
+    if (error) throw error;
+    MENU = buildMenuTree(data || []);
     populateStartCategories();
   } catch (err) {
     document.getElementById('start-category').innerHTML = '<option>تعذر تحميل القائمة</option>';
   }
+}
+
+// Turns flat menu rows into the same { category, restaurants: [{ restaurant, items }] }
+// shape the rest of the UI code expects.
+function buildMenuTree(rows) {
+  const categoryOrder = [];
+  const categoryMap = {};
+  rows.forEach(row => {
+    const category = (row.category || '').trim();
+    const restaurant = (row.restaurant || '').trim();
+    if (!category || !restaurant) return;
+    if (!categoryMap[category]) {
+      categoryMap[category] = { restaurantOrder: [], restaurantMap: {} };
+      categoryOrder.push(category);
+    }
+    const catEntry = categoryMap[category];
+    if (!catEntry.restaurantMap[restaurant]) {
+      catEntry.restaurantMap[restaurant] = [];
+      catEntry.restaurantOrder.push(restaurant);
+    }
+    catEntry.restaurantMap[restaurant].push({ id: String(row.id), name: row.item, price: Number(row.price) || 0 });
+  });
+  return categoryOrder.map(category => ({
+    category,
+    restaurants: categoryMap[category].restaurantOrder.map(restaurant => ({
+      restaurant, items: categoryMap[category].restaurantMap[restaurant]
+    }))
+  }));
 }
 
 function populateStartCategories() {
@@ -476,15 +500,9 @@ async function startSession() {
   btn.textContent = 'جارٍ البدء…';
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'start', category, restaurant })
-    });
-    const result = await res.json();
+    const { data: result, error } = await supabase.rpc('start_session', { p_category: category, p_restaurant: restaurant });
+    if (error) throw error;
     if (result.ok) {
-      // The "start" response already includes the employee list, so this
-      // is the only request we need — no second round trip to fetch it.
       applySessionPayload({ active: true, session: result.session, now: new Date().toISOString(), employees: result.employees || [] });
     } else {
       statusEl.textContent = result.error || 'تعذر بدء الجلسة.';
@@ -502,12 +520,10 @@ async function startSession() {
 async function refreshSessionStatus() {
   if (setupWarningVisible()) return;
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=session');
-    const data = await res.json();
+    const { data, error } = await supabase.rpc('get_session_status');
+    if (error) throw error;
     applySessionPayload(data);
   } catch (err) {
-    // If we've never successfully loaded anything yet, don't leave the
-    // page blank forever — show an error with a retry button instead.
     const loadingEl = document.getElementById('initial-loading');
     if (loadingEl && loadingEl.style.display !== 'none') {
       loadingEl.innerHTML = 'تعذر الاتصال بالخادم. <button class="refresh-btn" onclick="refreshSessionStatus()" style="margin-inline-start:8px;">إعادة المحاولة</button>';
@@ -525,7 +541,6 @@ function applySessionPayload(data) {
   const activeOrder = document.getElementById('active-order');
 
   if (!data.active) {
-    // Was it active a moment ago (now ended) or was there never a session?
     const wasActive = !!currentSession;
     currentSession = null;
     stopCountdown();
@@ -535,13 +550,10 @@ function applySessionPayload(data) {
     document.getElementById('name').value = '';
     document.getElementById('name-search').value = '';
     document.getElementById('existing-order-hint').style.display = 'none';
-    // Only fetch the menu once we actually know we need the "start a
-    // session" pickers — not on every page load regardless of session state.
     if (MENU.length === 0) loadMenuForStartPickers();
     if (wasActive) {
       lockedCard.style.display = 'block';
       startCard.style.display = 'none';
-      // after a short pause, flip to the start-session screen so people can begin the next round
       setTimeout(() => {
         lockedCard.style.display = 'none';
         if (!currentSession) startCard.style.display = 'block';
@@ -603,7 +615,7 @@ function populateEmployees(names) {
   employeesList = names || [];
   const searchInput = document.getElementById('name-search');
   if (employeesList.length === 0) {
-    searchInput.placeholder = 'لا توجد أسماء بعد — أضفها في تبويب Employees';
+    searchInput.placeholder = 'لا توجد أسماء بعد — أضفها في جدول employees';
     searchInput.disabled = true;
   } else {
     searchInput.disabled = false;
@@ -634,10 +646,6 @@ function selectName(name) {
   loadMyOrderFor(name);
 }
 
-// Renders the "your current order so far" hint from a { items: [...] }
-// payload — shared by the initial name-selection lookup and by the
-// response we already get back from submitOrder (so submitting no longer
-// needs a second request just to refresh this hint).
 function renderMyOrderHint(items) {
   const hint = document.getElementById('existing-order-hint');
   items = (items || []).filter(it => it.qty > 0);
@@ -656,9 +664,20 @@ async function loadMyOrderFor(name) {
   if (!currentSession || !name) { document.getElementById('existing-order-hint').style.display = 'none'; return; }
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=myOrder&sessionId=' + encodeURIComponent(currentSession.id) + '&name=' + encodeURIComponent(name));
-    const data = await res.json();
-    renderMyOrderHint(data.items);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('item_id, item_name, qty, line_total')
+      .eq('session_id', currentSession.id)
+      .eq('name', name);
+    if (error) throw error;
+
+    const byItem = {};
+    (data || []).forEach(row => {
+      if (!byItem[row.item_id]) byItem[row.item_id] = { name: row.item_name, qty: 0, lineTotal: 0 };
+      byItem[row.item_id].qty += row.qty;
+      byItem[row.item_id].lineTotal += Number(row.line_total);
+    });
+    renderMyOrderHint(Object.values(byItem));
   } catch (err) {
     document.getElementById('existing-order-hint').style.display = 'none';
   }
@@ -729,12 +748,8 @@ async function endSessionNow() {
 
   confirmBtn.disabled = true;
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'end', sessionId: currentSession.id, pin })
-    });
-    const result = await res.json();
+    const { data: result, error } = await supabase.rpc('end_session', { p_session_id: currentSession.id, p_pin: pin });
+    if (error) throw error;
     if (result.ok) {
       pinInput.value = '';
       document.getElementById('end-session-panel').style.display = 'none';
@@ -790,12 +805,10 @@ async function submitOrder() {
   btn.textContent = 'جارٍ الإرسال…';
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ sessionId: currentSession.id, name, items, notes: notesInput.value.trim() })
+    const { data: result, error } = await supabase.rpc('submit_order', {
+      p_session_id: currentSession.id, p_name: name, p_items: items, p_notes: notesInput.value.trim()
     });
-    const result = await res.json();
+    if (error) throw error;
 
     if (result.ok) {
       statusEl.textContent = 'تمت إضافة الطلب — شكرًا ' + name + '! إجمالي هذه الإضافة: ' + money(result.total);
@@ -804,8 +817,6 @@ async function submitOrder() {
       document.querySelectorAll('.stepper-qty').forEach(input => { input.value = ''; });
       renderCartSummary();
       notesInput.value = '';
-      // The submit response already carries the updated running order, so
-      // no second request is needed to refresh this hint.
       renderMyOrderHint(result.myOrder ? result.myOrder.items : []);
     } else {
       statusEl.textContent = result.error || 'تعذر إرسال الطلب.';
@@ -837,16 +848,21 @@ async function loadSessionsList() {
 
   if (setupWarningVisible()) {
     picker.innerHTML = '<option>الإعداد مطلوب</option>';
-    showTotalsMessage('<div class="setup-warning">أضف رابط تطبيق الويب من Apps Script إلى APPS_SCRIPT_URL في أعلى الكود بهذا الملف.</div>');
+    showTotalsMessage('<div class="setup-warning">أضف رابط مشروع Supabase إلى SUPABASE_URL في أعلى الكود بهذا الملف.</div>');
     return;
   }
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=sessions');
-    const data = await res.json();
-    // listSessions() on the backend already returns newest-first, so
-    // taking the first N here gives the most recent sessions.
-    sessionsCache = (data.sessions || []).slice(0, TOTALS_SESSION_LIMIT);
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('id, category, restaurant, start_time, active')
+      .order('start_time', { ascending: false })
+      .limit(TOTALS_SESSION_LIMIT);
+    if (error) throw error;
+
+    sessionsCache = (data || []).map(s => ({
+      id: s.id, category: s.category, restaurant: s.restaurant, startTime: s.start_time, active: !!s.active
+    }));
 
     if (sessionsCache.length === 0) {
       picker.innerHTML = '<option>لا توجد جلسات بعد</option>';
@@ -859,22 +875,26 @@ async function loadSessionsList() {
     loadTotals(picker.value);
   } catch (err) {
     picker.innerHTML = '<option>تعذر التحميل</option>';
-    showTotalsMessage('<div class="setup-warning">تعذر تحميل قائمة الجلسات. تحقق من رابط Apps Script.</div>');
+    showTotalsMessage('<div class="setup-warning">تعذر تحميل قائمة الجلسات. تحقق من إعدادات Supabase.</div>');
   }
 }
 
-// Quietly refreshes the session picker's options (new/ended sessions) while
-// keeping whichever session the person currently has selected, if it still
-// exists among the most recent TOTALS_SESSION_LIMIT sessions.
 async function refreshSessionsListPreserveSelection() {
   if (setupWarningVisible()) return;
   const picker = document.getElementById('session-picker');
   const previousValue = picker.value;
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=sessions');
-    const data = await res.json();
-    sessionsCache = (data.sessions || []).slice(0, TOTALS_SESSION_LIMIT);
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('id, category, restaurant, start_time, active')
+      .order('start_time', { ascending: false })
+      .limit(TOTALS_SESSION_LIMIT);
+    if (error) throw error;
+
+    sessionsCache = (data || []).map(s => ({
+      id: s.id, category: s.category, restaurant: s.restaurant, startTime: s.start_time, active: !!s.active
+    }));
     if (sessionsCache.length === 0) return;
 
     picker.innerHTML = sessionOptionsHtml(sessionsCache);
@@ -896,13 +916,49 @@ function showTotalsMessage(html) {
 async function loadTotals(sessionId) {
   if (!sessionId) return;
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=totals&sessionId=' + encodeURIComponent(sessionId));
-    const data = await res.json();
+    // Session's frozen item list
+    const { data: sessionRow, error: sErr } = await supabase
+      .from('sessions').select('items').eq('id', sessionId).single();
+    if (sErr) throw sErr;
+    const items = sessionRow ? (sessionRow.items || []) : [];
+
+    // All employees (so people who ordered nothing still show a row)
+    const { data: employeeRows, error: eErr } = await supabase.from('employees').select('name').order('name');
+    if (eErr) throw eErr;
+    const employees = (employeeRows || []).map(r => r.name);
+
+    // Raw order lines for this session
+    const { data: orderRows, error: oErr } = await supabase
+      .from('orders').select('name, item_id, qty, line_total').eq('session_id', sessionId);
+    if (oErr) throw oErr;
+
+    const matrix = {};
+    const totalsByItem = {};
+    const namesSeen = [];
+    let grandTotal = 0;
+    items.forEach(item => { totalsByItem[item.id] = { qty: 0, total: 0 }; });
+
+    (orderRows || []).forEach(row => {
+      const name = (row.name || '').trim();
+      if (!name) return;
+      if (!matrix[name]) { matrix[name] = {}; namesSeen.push(name); }
+      matrix[name][row.item_id] = (matrix[name][row.item_id] || 0) + row.qty;
+      if (totalsByItem[row.item_id]) {
+        totalsByItem[row.item_id].qty += row.qty;
+        totalsByItem[row.item_id].total += Number(row.line_total);
+      }
+      grandTotal += Number(row.line_total);
+    });
+
+    const rowNames = employees.slice();
+    namesSeen.forEach(name => { if (rowNames.indexOf(name) === -1) rowNames.push(name); });
+
+    const data = { items, employees: rowNames, matrix, totalsByItem, grandTotal };
     lastTotalsData = data;
     renderMatrix(data);
     document.getElementById('updated').textContent = 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG-u-nu-latn');
   } catch (err) {
-    showTotalsMessage('<div class="setup-warning">تعذر تحميل الإجماليات. تحقق من رابط Apps Script.</div>');
+    showTotalsMessage('<div class="setup-warning">تعذر تحميل الإجماليات. تحقق من إعدادات Supabase.</div>');
   }
 }
 
@@ -924,7 +980,6 @@ function renderMatrix(data) {
   table.style.display = 'table';
   emptyNote.style.display = 'none';
 
-  // Per-employee subtotal + whether they ordered anything this session
   personRows = employees.map(name => {
     const row = matrix[name] || {};
     let subtotal = 0;
@@ -932,13 +987,11 @@ function renderMatrix(data) {
     return { name, subtotal, participated: subtotal > 0 };
   });
 
-  // Header row
   const headRow = document.getElementById('matrix-head-row');
   headRow.innerHTML = '<th class="name-col">الاسم</th>' + items.map(item => `
     <th><span class="item-head-name">${escapeHtml(item.name)}</span></th>
   `).join('') + '<th>المجموع الفرعي</th><th>رسوم التوصيل</th><th>الإجمالي</th>';
 
-  // Body rows (one per employee)
   const bodyEl = document.getElementById('matrix-body');
   if (employees.length === 0) {
     bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
@@ -959,7 +1012,6 @@ function renderMatrix(data) {
     }).join('');
   }
 
-  // Footer summary rows: price, qty sold, total per item
   const footEl = document.getElementById('matrix-foot');
   const priceRow = '<tr class="summary-row"><td class="name-col">السعر</td>' +
     items.map(item => `<td>${money(item.price)}</td>`).join('') + '<td></td><td></td><td></td></tr>';
@@ -1043,10 +1095,8 @@ function exportTotalsCSV() {
 
   const rows = [];
 
-  // Header row
   rows.push(['الاسم', ...items.map(it => it.name), 'المجموع الفرعي', 'رسوم التوصيل', 'الإجمالي']);
 
-  // One row per person
   personRows.forEach(p => {
     const row = matrix[p.name] || {};
     const cells = items.map(it => row[it.id] || 0);
@@ -1055,7 +1105,6 @@ function exportTotalsCSV() {
     rows.push([p.name, ...cells, p.subtotal.toFixed(2), fee.toFixed(2), total.toFixed(2)]);
   });
 
-  // Per-item summary rows
   rows.push(['السعر', ...items.map(it => it.price), '', '', '']);
   rows.push(['الكمية', ...items.map(it => (totalsByItem[it.id] || {}).qty || 0), '', '', '']);
   rows.push([
@@ -1066,7 +1115,6 @@ function exportTotalsCSV() {
     (totalsGrandTotal + deliveryTotal).toFixed(2),
   ]);
 
-  // Overall summary block
   rows.push([]);
   rows.push(['عدد المشاركين', participantCount + ' / ' + personRows.length]);
   rows.push(['الإجمالي الفرعي (الأصناف)', totalsGrandTotal.toFixed(2)]);
@@ -1087,7 +1135,6 @@ function exportTotalsCSV() {
 }
 
 function downloadCSV(filename, csvContent) {
-  // \uFEFF (BOM) so Excel opens the Arabic text as UTF-8 instead of mangling it
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
