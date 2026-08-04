@@ -665,7 +665,10 @@ function renderMyOrderHint(items) {
 }
 
 async function loadMyOrderFor(name) {
-  if (!currentSession || !name) { document.getElementById('existing-order-hint').style.display = 'none'; return; }
+  if (!currentSession || !name) { 
+    document.getElementById('existing-order-hint').style.display = 'none'; 
+    return; 
+  }
 
   try {
     const { data, error } = await supabase
@@ -681,7 +684,26 @@ async function loadMyOrderFor(name) {
       byItem[row.item_id].qty += row.qty;
       byItem[row.item_id].lineTotal += Number(row.line_total);
     });
-    renderMyOrderHint(Object.values(byItem));
+
+    // ===== NEW: Populate the qty object with existing order amounts =====
+    if (Object.keys(byItem).length > 0) {
+      // Load their existing quantities into the qty object
+      Object.entries(byItem).forEach(([itemId, itemData]) => {
+        qty[itemId] = itemData.qty;
+      });
+      
+      // Re-render the items list to show the populated quantities
+      renderItemsList(currentSession.items);
+      
+      // Show hint
+      renderMyOrderHint(Object.values(byItem));
+    } else {
+      // No existing orders - clear quantities
+      Object.keys(qty).forEach(id => delete qty[id]);
+      renderItemsList(currentSession.items);
+      document.getElementById('existing-order-hint').style.display = 'none';
+    }
+    
   } catch (err) {
     document.getElementById('existing-order-hint').style.display = 'none';
   }
