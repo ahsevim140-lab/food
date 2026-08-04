@@ -352,7 +352,11 @@ const SUPABASE_URL = 'https://jmqbsicjpncaycopnzde.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CLq7XSVrudltwN9J5mXbOg_Iy5Ra9Dj';
 // =================================================================================================================
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// FIXED: Use a global window check to avoid "Identifier 'supabase' has already been declared" error
+if (!window._supabaseClient) {
+  window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+var supabase = window._supabaseClient;
 
 // Polling intervals — Supabase has no server-side "live" cache like the old
 // Apps Script version did, so these poll the database directly. Still kept
