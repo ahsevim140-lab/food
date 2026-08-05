@@ -839,11 +839,11 @@ async function submitOrder() {
     if (result.ok) {
       statusEl.textContent = 'تمت إضافة الطلب — شكرًا ' + name + '! إجمالي هذه الإضافة: ' + money(result.total);
       statusEl.className = 'status ok';
-      Object.keys(qty).forEach(id => qty[id] = 0);
-      document.querySelectorAll('.stepper-qty').forEach(input => { input.value = ''; });
-      renderCartSummary();
       notesInput.value = '';
-      renderMyOrderHint(result.myOrder ? result.myOrder.items : []);
+      
+      // ===== FIX: Reload their order from the database immediately =====
+      await loadMyOrderFor(name);
+      
     } else {
       statusEl.textContent = result.error || 'تعذر إرسال الطلب.';
       statusEl.className = 'status err';
