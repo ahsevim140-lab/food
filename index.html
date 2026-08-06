@@ -51,15 +51,24 @@
   /* Admin Modal */
   .admin-modal{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; display:none;}
   .admin-modal.active{display:flex; align-items:center; justify-content:center;}
-  .admin-modal-content{background:var(--panel); border-radius:15px; padding:30px; max-width:500px; width:95%; max-height:90vh; overflow-y:auto;}
-  .admin-modal h2{margin:0 0 20px; font-size:18px; color:var(--rust);}
-  .admin-modal button.close-btn{position:absolute; top:15px; right:15px; font-size:24px; background:none; border:none; color:var(--text-dim); cursor:pointer;}
-  .admin-tabs{display:flex; gap:10px; margin-bottom:20px;}
+  .admin-modal-content{background:var(--panel); border-radius:15px; padding:30px; max-width:500px; width:95%; max-height:90vh; overflow-y:auto; position:relative;}
+  .admin-modal h2{margin:0 0 20px 0; font-size:18px; color:var(--rust); padding-right:32px;}
+  .close-btn{font-size:28px; background:none; border:none; color:var(--text-dim); cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:color 0.2s; position:absolute; top:12px; right:15px;}
+  .close-btn:hover{color:var(--rust);}
+  .admin-tabs{display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;}
   .admin-tabs button{font-family:'Cairo', sans-serif; font-size:12px; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text-dim); cursor:pointer;}
   .admin-tabs button.active{background:var(--rust); color:#fff; border-color:var(--rust);}
   .admin-tab{display:none;}
   .admin-tab.active{display:block;}
   .admin-modal .submit-btn{margin-top:20px;}
+  .danger-btn{
+    width:100%; padding:14px; border:1px solid var(--danger); border-radius:8px; background:transparent; color:var(--danger);
+    font-family:'Cairo', sans-serif; font-weight:600; font-size:15px; cursor:pointer; margin-top:10px;
+    transition:background 0.15s ease, color 0.15s ease;
+  }
+  .danger-btn:hover{background:var(--danger); color:#fff;}
+  .danger-btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .manage-hint{font-size:12px; color:var(--text-dim); margin:-8px 0 16px;}
 
   .items-list{
     border:1px solid var(--line); border-radius:10px; background:var(--panel); margin-bottom:16px; overflow:hidden;
@@ -204,10 +213,11 @@
     <div class="admin-modal-content">
       <button class="close-btn" onclick="hideAdminModal()">✕</button>
       <h2>لوحة التحكم الإدارية</h2>
-      
+
       <div class="admin-tabs">
         <button class="active" onclick="switchAdminTab('menu')">إضافة صنف</button>
         <button onclick="switchAdminTab('employee')">إضافة موظف</button>
+        <button onclick="switchAdminTab('manage')">حذف صنف / مطعم</button>
       </div>
 
       <!-- Add Menu Item Tab -->
@@ -219,11 +229,8 @@
         <div class="field">
           <label for="menu-category">الفئة</label>
           <select id="menu-category">
-            <option>-- اختر من الموجود --</option>
-            <option>فطائر</option>
-            <option>سندويش</option>
-            <option>مشروبات</option>
-            <option>_new_category_">➕ إضافة فئة جديدة</option>
+            <option value="">-- اختر من الموجود --</option>
+            <option value="_new_category_">➕ إضافة فئة جديدة</option>
           </select>
         </div>
         <div id="new-category-input" class="field" style="display:none;">
@@ -234,11 +241,7 @@
         <div class="field">
           <label for="menu-restaurant">المطعم</label>
           <select id="menu-restaurant">
-            <option>-- اختر من الموجود --</option>
-            <option>فطائر المزة</option>
-            <option>فطائر المحبة</option>
-            <option>الصداقة</option>
-            <option>على كيفك</option>
+            <option value="">-- اختر من الموجود --</option>
             <option value="_new_restaurant_">➕ إضافة مطعم جديد</option>
           </select>
         </div>
@@ -270,6 +273,30 @@
         </div>
         <button class="submit-btn" onclick="addEmployee()">إضافة الموظف</button>
         <div class="status" id="employee-status"></div>
+      </div>
+
+      <!-- Manage / Remove Tab -->
+      <div id="admin-manage" class="admin-tab">
+        <div class="field">
+          <label for="admin-password-manage">كلمة المرور الإدارية</label>
+          <input type="password" id="admin-password-manage" placeholder="أدخل كلمة المرور">
+        </div>
+        <div class="field">
+          <label for="manage-category">الفئة</label>
+          <select id="manage-category"><option value="">جارٍ التحميل…</option></select>
+        </div>
+        <div class="field">
+          <label for="manage-restaurant">المطعم</label>
+          <select id="manage-restaurant"><option value="">اختر الفئة أولاً</option></select>
+        </div>
+        <div class="field">
+          <label for="manage-item">الصنف</label>
+          <select id="manage-item"><option value="">اختر المطعم أولاً</option></select>
+        </div>
+        <button class="submit-btn" onclick="removeMenuItem()">حذف هذا الصنف فقط</button>
+        <div class="manage-hint">لحذف المطعم بالكامل مع كل أصنافه (لا يمكن التراجع):</div>
+        <button class="danger-btn" onclick="removeRestaurant()">حذف المطعم بالكامل</button>
+        <div class="status" id="manage-status"></div>
       </div>
     </div>
   </div>
@@ -444,12 +471,14 @@ function switchTab(tab) {
 
 function showAdminModal() {
   document.getElementById('admin-modal').classList.add('active');
+  refreshMenuData();
 }
 
 function hideAdminModal() {
   document.getElementById('admin-modal').classList.remove('active');
   document.getElementById('admin-password').value = '';
   document.getElementById('admin-password-emp').value = '';
+  document.getElementById('admin-password-manage').value = '';
   document.getElementById('menu-category').value = '';
   document.getElementById('menu-restaurant').value = '';
   document.getElementById('menu-item').value = '';
@@ -457,32 +486,34 @@ function hideAdminModal() {
   document.getElementById('employee-name').value = '';
   document.getElementById('menu-status').textContent = '';
   document.getElementById('employee-status').textContent = '';
+  document.getElementById('manage-status').textContent = '';
 }
 
 function switchAdminTab(tab) {
   document.getElementById('admin-menu').classList.toggle('active', tab === 'menu');
   document.getElementById('admin-employee').classList.toggle('active', tab === 'employee');
+  document.getElementById('admin-manage').classList.toggle('active', tab === 'manage');
   document.querySelectorAll('.admin-tabs button').forEach((btn, idx) => {
-    btn.classList.toggle('active', (idx === 0 && tab === 'menu') || (idx === 1 && tab === 'employee'));
+    btn.classList.toggle('active', (idx === 0 && tab === 'menu') || (idx === 1 && tab === 'employee') || (idx === 2 && tab === 'manage'));
   });
 }
 
 async function addMenuItem() {
   const statusEl = document.getElementById('menu-status');
   const password = document.getElementById('admin-password').value;
-  
+
   // Get category - either from dropdown or from new input
   let category = document.getElementById('menu-category').value;
   if (category === '_new_category_') {
     category = document.getElementById('menu-category-new').value;
   }
-  
+
   // Get restaurant - either from dropdown or from new input
   let restaurant = document.getElementById('menu-restaurant').value;
   if (restaurant === '_new_restaurant_') {
     restaurant = document.getElementById('menu-restaurant-new').value;
   }
-  
+
   const item = document.getElementById('menu-item').value;
   const price = Number(document.getElementById('menu-price').value);
 
@@ -513,7 +544,7 @@ async function addMenuItem() {
       document.getElementById('admin-password').value = '';
       document.getElementById('new-category-input').style.display = 'none';
       document.getElementById('new-restaurant-input').style.display = 'none';
-      setTimeout(() => loadMenuForStartPickers(), 500);
+      await refreshMenuData();
     } else {
       statusEl.textContent = data.error;
       statusEl.className = 'status err';
@@ -557,6 +588,76 @@ async function addEmployee() {
   }
 }
 
+async function removeMenuItem() {
+  const statusEl = document.getElementById('manage-status');
+  const password = document.getElementById('admin-password-manage').value;
+  const itemId = document.getElementById('manage-item').value;
+  const itemSelect = document.getElementById('manage-item');
+  const itemLabel = itemSelect.options[itemSelect.selectedIndex] ? itemSelect.options[itemSelect.selectedIndex].textContent : '';
+
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+
+  if (!password) { statusEl.textContent = 'أدخل كلمة المرور'; statusEl.className = 'status err'; return; }
+  if (!itemId) { statusEl.textContent = 'اختر صنفًا للحذف'; statusEl.className = 'status err'; return; }
+  if (!confirm('هل أنت متأكد من حذف "' + itemLabel + '"؟')) return;
+
+  try {
+    const { data, error } = await supabase.rpc('remove_menu_item', {
+      p_admin_password: password,
+      p_item_id: itemId
+    });
+    if (error) throw error;
+    if (data.ok) {
+      statusEl.textContent = data.message;
+      statusEl.className = 'status ok';
+      document.getElementById('admin-password-manage').value = '';
+      await refreshMenuData();
+    } else {
+      statusEl.textContent = data.error;
+      statusEl.className = 'status err';
+    }
+  } catch (err) {
+    statusEl.textContent = 'حدث خطأ — حاول مرة أخرى';
+    statusEl.className = 'status err';
+  }
+}
+
+async function removeRestaurant() {
+  const statusEl = document.getElementById('manage-status');
+  const password = document.getElementById('admin-password-manage').value;
+  const category = document.getElementById('manage-category').value;
+  const restaurant = document.getElementById('manage-restaurant').value;
+
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+
+  if (!password) { statusEl.textContent = 'أدخل كلمة المرور'; statusEl.className = 'status err'; return; }
+  if (!category || !restaurant) { statusEl.textContent = 'اختر الفئة والمطعم'; statusEl.className = 'status err'; return; }
+  if (!confirm('هل أنت متأكد من حذف مطعم "' + restaurant + '" وجميع أصنافه؟ لا يمكن التراجع عن هذا.')) return;
+
+  try {
+    const { data, error } = await supabase.rpc('remove_restaurant', {
+      p_admin_password: password,
+      p_category: category,
+      p_restaurant: restaurant
+    });
+    if (error) throw error;
+    if (data.ok) {
+      statusEl.textContent = data.message;
+      statusEl.className = 'status ok';
+      document.getElementById('admin-password-manage').value = '';
+      await refreshMenuData();
+    } else {
+      statusEl.textContent = data.error;
+      statusEl.className = 'status err';
+    }
+  } catch (err) {
+    statusEl.textContent = 'حدث خطأ — حاول مرة أخرى';
+    statusEl.className = 'status err';
+  }
+}
+
 function setupWarningVisible() {
   return SUPABASE_URL.indexOf('PASTE_YOUR') === 0;
 }
@@ -576,19 +677,34 @@ async function initOrder() {
     }
   }, 5000);
   await refreshSessionStatus();
+  await loadMenuForStartPickers();
   clearTimeout(slowNoticeTimer);
   setInterval(refreshSessionStatus, SESSION_POLL_MS);
 }
 
 async function loadMenuForStartPickers() {
   try {
-    const { data, error } = await supabase.from('menu').select('id, category, restaurant, item, price');
+    const { data, error } = await supabase.from('menu').select('id, category, restaurant, item, price').order('category').order('restaurant').order('item');
     if (error) throw error;
     MENU = buildMenuTree(data || []);
     populateStartCategories();
+    return MENU;
   } catch (err) {
     document.getElementById('start-category').innerHTML = '<option>تعذر تحميل القائمة</option>';
+    return MENU;
   }
+}
+
+// Re-fetches the menu from the database and refreshes every dropdown that
+// depends on it: the "start session" pickers AND the admin panel pickers
+// (add-item category/restaurant, manage-item category/restaurant/item).
+// Called whenever the admin modal opens and after any add/remove action,
+// so newly added or removed restaurants/items show up immediately.
+async function refreshMenuData() {
+  await loadMenuForStartPickers();
+  populateAdminMenuPickers();
+  populateManagePickers();
+  return MENU;
 }
 
 function buildMenuTree(rows) {
@@ -637,6 +753,66 @@ function populateStartRestaurants() {
     return;
   }
   select.innerHTML = catGroup.restaurants.map(r => `<option value="${escapeHtml(r.restaurant)}">${escapeHtml(r.restaurant)}</option>`).join('');
+}
+
+// ---- Admin "Add Item" tab pickers (dynamic, built from MENU) ----
+function populateAdminMenuPickers() {
+  const categorySelect = document.getElementById('menu-category');
+  const currentCategoryVal = categorySelect.value;
+  const categoryOptions = MENU.map(g => `<option value="${escapeHtml(g.category)}">${escapeHtml(g.category)}</option>`).join('');
+  categorySelect.innerHTML = '<option value="">-- اختر من الموجود --</option>' + categoryOptions + '<option value="_new_category_">➕ إضافة فئة جديدة</option>';
+  if ([...categorySelect.options].some(o => o.value === currentCategoryVal)) categorySelect.value = currentCategoryVal;
+
+  populateAdminRestaurants();
+}
+
+function populateAdminRestaurants() {
+  const categorySelect = document.getElementById('menu-category');
+  const restaurantSelect = document.getElementById('menu-restaurant');
+  const currentRestaurantVal = restaurantSelect.value;
+  const catGroup = MENU.find(g => g.category === categorySelect.value);
+  const restaurantOptions = catGroup ? catGroup.restaurants.map(r => `<option value="${escapeHtml(r.restaurant)}">${escapeHtml(r.restaurant)}</option>`).join('') : '';
+  restaurantSelect.innerHTML = '<option value="">-- اختر من الموجود --</option>' + restaurantOptions + '<option value="_new_restaurant_">➕ إضافة مطعم جديد</option>';
+  if ([...restaurantSelect.options].some(o => o.value === currentRestaurantVal)) restaurantSelect.value = currentRestaurantVal;
+}
+
+// ---- Admin "Manage / Remove" tab pickers (dynamic, built from MENU) ----
+function populateManagePickers() {
+  const select = document.getElementById('manage-category');
+  if (MENU.length === 0) {
+    select.innerHTML = '<option value="">لا توجد أصناف بعد</option>';
+    document.getElementById('manage-restaurant').innerHTML = '<option value="">—</option>';
+    document.getElementById('manage-item').innerHTML = '<option value="">—</option>';
+    return;
+  }
+  select.innerHTML = MENU.map(g => `<option value="${escapeHtml(g.category)}">${escapeHtml(g.category)}</option>`).join('');
+  populateManageRestaurants();
+}
+
+function populateManageRestaurants() {
+  const category = document.getElementById('manage-category').value;
+  const catGroup = MENU.find(g => g.category === category);
+  const select = document.getElementById('manage-restaurant');
+  if (!catGroup || catGroup.restaurants.length === 0) {
+    select.innerHTML = '<option value="">لا توجد مطاعم</option>';
+    document.getElementById('manage-item').innerHTML = '<option value="">—</option>';
+    return;
+  }
+  select.innerHTML = catGroup.restaurants.map(r => `<option value="${escapeHtml(r.restaurant)}">${escapeHtml(r.restaurant)}</option>`).join('');
+  populateManageItems();
+}
+
+function populateManageItems() {
+  const category = document.getElementById('manage-category').value;
+  const restaurant = document.getElementById('manage-restaurant').value;
+  const catGroup = MENU.find(g => g.category === category);
+  const restGroup = catGroup ? catGroup.restaurants.find(r => r.restaurant === restaurant) : null;
+  const select = document.getElementById('manage-item');
+  if (!restGroup || restGroup.items.length === 0) {
+    select.innerHTML = '<option value="">لا توجد أصناف</option>';
+    return;
+  }
+  select.innerHTML = restGroup.items.map(it => `<option value="${escapeHtml(it.id)}">${escapeHtml(it.name)} — ${money(it.price)}</option>`).join('');
 }
 
 async function startSession() {
@@ -818,9 +994,9 @@ function renderMyOrderHint(items) {
 }
 
 async function loadMyOrderFor(name) {
-  if (!currentSession || !name) { 
-    document.getElementById('existing-order-hint').style.display = 'none'; 
-    return; 
+  if (!currentSession || !name) {
+    document.getElementById('existing-order-hint').style.display = 'none';
+    return;
   }
 
   try {
@@ -849,7 +1025,7 @@ async function loadMyOrderFor(name) {
       renderItemsList(currentSession.items);
       document.getElementById('existing-order-hint').style.display = 'none';
     }
-    
+
   } catch (err) {
     document.getElementById('existing-order-hint').style.display = 'none';
   }
@@ -986,10 +1162,10 @@ async function submitOrder() {
       statusEl.textContent = 'تمت إضافة الطلب — شكرًا ' + name + '! إجمالي هذه الإضافة: ' + money(result.total);
       statusEl.className = 'status ok';
       notesInput.value = '';
-      
+
       // ===== FIX: Reload their order from the database immediately =====
       await loadMyOrderFor(name);
-      
+
     } else {
       statusEl.textContent = result.error || 'تعذر إرسال الطلب.';
       statusEl.className = 'status err';
@@ -1296,7 +1472,7 @@ setInterval(() => {
   }
 }, TOTALS_POLL_MS);
 
-// Handle category dropdown change
+// Handle category dropdown change (Add Item tab)
 document.getElementById('menu-category').addEventListener('change', () => {
   const value = document.getElementById('menu-category').value;
   if (value === '_new_category_') {
@@ -1306,9 +1482,10 @@ document.getElementById('menu-category').addEventListener('change', () => {
     document.getElementById('new-category-input').style.display = 'none';
     document.getElementById('menu-category-new').value = '';
   }
+  populateAdminRestaurants();
 });
 
-// Handle restaurant dropdown change
+// Handle restaurant dropdown change (Add Item tab)
 document.getElementById('menu-restaurant').addEventListener('change', () => {
   const value = document.getElementById('menu-restaurant').value;
   if (value === '_new_restaurant_') {
@@ -1317,6 +1494,17 @@ document.getElementById('menu-restaurant').addEventListener('change', () => {
   } else {
     document.getElementById('new-restaurant-input').style.display = 'none';
     document.getElementById('menu-restaurant-new').value = '';
+  }
+});
+
+// Manage / Remove tab cascading selects
+document.getElementById('manage-category').addEventListener('change', populateManageRestaurants);
+document.getElementById('manage-restaurant').addEventListener('change', populateManageItems);
+
+// Close modal when clicking outside of it
+document.getElementById('admin-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'admin-modal') {
+    hideAdminModal();
   }
 });
 </script>
