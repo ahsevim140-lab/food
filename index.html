@@ -24,6 +24,11 @@
   .nav{display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px;}
   h1{font-family:'Cairo', sans-serif; font-weight:600; font-size:clamp(22px,5vw,28px); margin:0;}
   .date{font-family:'Cairo', sans-serif; color:var(--mustard); font-size:13px;}
+  .admin-btn{
+    font-family:'Cairo', sans-serif; font-size:11px; padding:5px 10px; border-radius:15px;
+    border:1px solid var(--text-dim); background:transparent; color:var(--text-dim); cursor:pointer;
+  }
+  .admin-btn:hover{background:var(--panel-2);}
   .tabs{display:flex; gap:8px; margin-top:14px;}
   .tabs button{
     font-family:'Cairo', sans-serif; font-size:13px; cursor:pointer;
@@ -42,6 +47,19 @@
   }
   .field select{appearance:none; background-image:linear-gradient(45deg, transparent 50%, var(--mustard) 50%), linear-gradient(135deg, var(--mustard) 50%, transparent 50%); background-position:left 18px center, left 13px center; background-size:5px 5px, 5px 5px; background-repeat:no-repeat;}
   .field textarea{min-height:50px; resize:none;}
+
+  /* Admin Modal */
+  .admin-modal{position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; display:none;}
+  .admin-modal.active{display:flex; align-items:center; justify-content:center;}
+  .admin-modal-content{background:var(--panel); border-radius:15px; padding:30px; max-width:500px; width:95%; max-height:90vh; overflow-y:auto;}
+  .admin-modal h2{margin:0 0 20px; font-size:18px; color:var(--rust);}
+  .admin-modal button.close-btn{position:absolute; top:15px; right:15px; font-size:24px; background:none; border:none; color:var(--text-dim); cursor:pointer;}
+  .admin-tabs{display:flex; gap:10px; margin-bottom:20px;}
+  .admin-tabs button{font-family:'Cairo', sans-serif; font-size:12px; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--text-dim); cursor:pointer;}
+  .admin-tabs button.active{background:var(--rust); color:#fff; border-color:var(--rust);}
+  .admin-tab{display:none;}
+  .admin-tab.active{display:block;}
+  .admin-modal .submit-btn{margin-top:20px;}
 
   .items-list{
     border:1px solid var(--line); border-radius:10px; background:var(--panel); margin-bottom:16px; overflow:hidden;
@@ -68,9 +86,7 @@
     -moz-appearance:textfield;
   }
   .stepper-qty::-webkit-outer-spin-button, .stepper-qty::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
-  .qty-input:focus-visible, .stepper-qty:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible{outline:2px solid var(--rust); outline-offset:1px;}
 
-  /* Searchable name field */
   .name-field{position:relative;}
   .name-options{
     position:absolute; left:0; right:0; top:100%; margin-top:4px; z-index:20;
@@ -111,7 +127,7 @@
     .item-row{padding:16px;}
     .name-option{padding:14px 16px; font-size:16px;}
     .submit-btn, .start-btn{padding:16px; font-size:16px;}
-    .end-session-btn{padding:9px 14px; font-size:13px;}
+    .admin-modal-content{padding:20px;}
   }
 
   .status{margin-top:12px; font-size:13.5px; text-align:center;}
@@ -120,14 +136,12 @@
   .loading, .setup-warning, .empty-note{font-family:'Cairo', sans-serif; color:var(--text-dim); font-size:14px; padding:16px 0;}
   .setup-warning{background:var(--panel); border:1px solid var(--rust); border-radius:8px; padding:16px; color:var(--rust);}
 
-  /* Session panel (no active session) */
   .session-card{
     background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px;
   }
   .session-card h2{font-size:16px; margin:0 0 4px; font-weight:600;}
   .session-card p{font-size:13px; color:var(--text-dim); margin:0 0 18px;}
 
-  /* Active session header */
   .session-active-bar{
     display:flex; justify-content:space-between; align-items:center; gap:12px;
     background:var(--panel-2); border:1px solid var(--line); border-radius:10px;
@@ -167,52 +181,6 @@
   }
   .locked-card .big{font-size:16px; font-weight:600; color:var(--rust); margin-bottom:6px;}
   .locked-card p{font-size:13px; color:var(--text-dim); margin:0;}
-
-  /* Totals matrix */
-  .matrix-wrap{
-    overflow-x:auto; overflow-y:auto; max-height:480px;
-    border:1px solid var(--line); border-radius:10px; background:var(--panel);
-  }
-  table.matrix{width:100%; border-collapse:collapse; font-size:13.5px; min-width:820px;}
-  table.matrix th, table.matrix td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:center;}
-  table.matrix thead th{
-    position:sticky; top:0; background:var(--panel); z-index:2;
-    font-family:'Cairo', sans-serif; font-size:12px; font-weight:600; color:var(--text-dim);
-    border-bottom:2px solid var(--line); vertical-align:bottom;
-  }
-  table.matrix .item-head-name{display:block; color:var(--text);}
-  table.matrix .item-head-sub{display:block; font-size:10px; color:var(--text-dim); font-weight:400;}
-  table.matrix th.name-col, table.matrix td.name-col{
-    text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1;
-  }
-  table.matrix td.qty-cell{font-family:'IBM Plex Mono', monospace; color:var(--text);}
-  table.matrix tr.summary-row td{font-family:'IBM Plex Mono', monospace; color:var(--mustard); font-weight:500; background:var(--panel-2);}
-  table.matrix tr.summary-row td.name-col{font-family:'Cairo', sans-serif; color:var(--text); background:var(--panel-2);}
-
-  .totals-footer{
-    margin-top:18px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px;
-  }
-  .totals-footer .row{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px;}
-  .totals-footer .row:last-child{border-bottom:none; padding-top:12px; font-weight:600; font-size:16px;}
-  .totals-footer .row .num{font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;}
-  .fee-input{
-    width:130px; font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center;
-    padding:6px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--text); direction:ltr;
-  }
-
-  .refresh-row{display:flex; justify-content:space-between; align-items:center; margin:16px 0 6px; flex-wrap:wrap; gap:8px;}
-  .refresh-btn{
-    font-family:'Cairo', sans-serif; font-size:13px; font-weight:600; padding:9px 16px;
-    border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--rust); cursor:pointer;
-  }
-  .refresh-btn:hover{background:var(--panel-2);}
-  .updated{font-family:'Cairo', sans-serif; font-size:12px; color:var(--text-dim);}
-
-  .session-pill{
-    display:inline-block; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; margin-inline-start:8px;
-  }
-  .session-pill.active{background:#e4efd9; color:var(--good);}
-  .session-pill.ended{background:var(--panel-2); color:var(--text-dim);}
 </style>
 </head>
 <body>
@@ -220,7 +188,10 @@
   <header>
     <div class="nav">
       <h1 id="page-title">طلب غداء المكتب</h1>
-      <div class="date" id="today"></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div class="date" id="today"></div>
+        <button class="admin-btn" id="admin-btn" onclick="showAdminModal()">⚙️ إدارة</button>
+      </div>
     </div>
     <div class="tabs">
       <button id="tab-order" class="active" onclick="switchTab('order')">تقديم الطلب</button>
@@ -228,12 +199,74 @@
     </div>
   </header>
 
+  <!-- ADMIN MODAL -->
+  <div id="admin-modal" class="admin-modal">
+    <div class="admin-modal-content">
+      <button class="close-btn" onclick="hideAdminModal()">✕</button>
+      <h2>لوحة التحكم الإدارية</h2>
+      
+      <div class="admin-tabs">
+        <button class="active" onclick="switchAdminTab('menu')">إضافة صنف</button>
+        <button onclick="switchAdminTab('employee')">إضافة موظف</button>
+      </div>
+
+      <!-- Add Menu Item Tab -->
+      <div id="admin-menu" class="admin-tab active">
+        <div class="field">
+          <label for="admin-password">كلمة المرور الإدارية</label>
+          <input type="password" id="admin-password" placeholder="أدخل كلمة المرور">
+        </div>
+        <div class="field">
+          <label for="menu-category">الفئة</label>
+          <select id="menu-category">
+            <option>-- اختر أو اكتب فئة جديدة --</option>
+            <option>فطائر</option>
+            <option>سندويش</option>
+            <option>مشروبات</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="menu-restaurant">المطعم</label>
+          <select id="menu-restaurant">
+            <option>-- اختر أو اكتب مطعم جديد --</option>
+            <option>فطائر المزة</option>
+            <option>فطائر المحبة</option>
+            <option>الصداقة</option>
+            <option>على كيفك</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="menu-item">اسم الصنف</label>
+          <input type="text" id="menu-item" placeholder="محمرة، جبنة، إلخ">
+        </div>
+        <div class="field">
+          <label for="menu-price">السعر</label>
+          <input type="number" id="menu-price" placeholder="20" min="0" step="0.01">
+        </div>
+        <button class="submit-btn" onclick="addMenuItem()">إضافة الصنف</button>
+        <div class="status" id="menu-status"></div>
+      </div>
+
+      <!-- Add Employee Tab -->
+      <div id="admin-employee" class="admin-tab">
+        <div class="field">
+          <label for="admin-password-emp">كلمة المرور الإدارية</label>
+          <input type="password" id="admin-password-emp" placeholder="أدخل كلمة المرور">
+        </div>
+        <div class="field">
+          <label for="employee-name">اسم الموظف</label>
+          <input type="text" id="employee-name" placeholder="أحمد، سارة، إلخ">
+        </div>
+        <button class="submit-btn" onclick="addEmployee()">إضافة الموظف</button>
+        <div class="status" id="employee-status"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ORDER VIEW -->
   <div id="view-order" class="view active">
-
     <div id="initial-loading" class="loading">جارٍ تحميل حالة الجلسة…</div>
 
-    <!-- 1) No active session: start one -->
     <div id="start-session-card" class="session-card" style="display:none;">
       <h2>لا توجد جلسة طلب نشطة</h2>
       <p>اختر الفئة والمطعم لبدء جلسة طلب مدتها 45 دقيقة يمكن للجميع الطلب خلالها.</p>
@@ -249,13 +282,11 @@
       <div class="status" id="start-status"></div>
     </div>
 
-    <!-- 2) Session just ended, locked -->
     <div id="locked-card" class="locked-card" style="display:none;">
       <div class="big">انتهت الجلسة</div>
       <p>لا يمكن تقديم طلبات جديدة الآن. يمكن لأي شخص بدء جلسة جديدة.</p>
     </div>
 
-    <!-- 3) Active session: ordering form -->
     <div id="active-order" style="display:none;">
       <div class="session-active-bar">
         <div class="info">
@@ -318,66 +349,69 @@
       <select id="session-picker"><option>جارٍ التحميل…</option></select>
     </div>
 
-    <div class="matrix-wrap">
-      <table class="matrix" id="matrix-table">
-        <thead><tr id="matrix-head-row"><th class="name-col">الاسم</th></tr></thead>
+    <div style="overflow-x:auto; overflow-y:auto; max-height:480px; border:1px solid var(--line); border-radius:10px; background:var(--panel);">
+      <table class="matrix" id="matrix-table" style="width:100%; border-collapse:collapse; font-size:13.5px; min-width:820px;">
+        <thead><tr id="matrix-head-row"><th style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1;">الاسم</th></tr></thead>
         <tbody id="matrix-body"></tbody>
         <tfoot id="matrix-foot"></tfoot>
       </table>
     </div>
     <div class="empty-note" id="totals-empty-note" style="display:none;">لم يتم تقديم أي طلبات بعد.</div>
 
-    <div class="totals-footer">
-      <div class="row"><span>الإجمالي الفرعي (الأصناف)</span><span class="num" id="subtotal">0 ل.س</span></div>
-      <div class="row"><span>عدد المشاركين</span><span class="num" id="participant-count">0</span></div>
-      <div class="row"><span>إجمالي رسوم التوصيل</span><input type="number" min="0" step="100" class="fee-input" id="delivery-fee-total" value="0" placeholder="0"></div>
-      <div class="row"><span>رسوم التوصيل للشخص الواحد</span><span class="num" id="delivery-per-person">0 ل.س</span></div>
-      <div class="row"><span>الإجمالي الكلي</span><span class="num" id="full-total">0 ل.س</span></div>
+    <div style="margin-top:18px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px;">
+        <span>الإجمالي الفرعي (الأصناف)</span><span style="font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;" id="subtotal">0 ل.س</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px;">
+        <span>عدد المشاركين</span><span style="font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;" id="participant-count">0</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px;">
+        <span>إجمالي رسوم التوصيل</span>
+        <input type="number" min="0" step="100" style="width:130px; font-family:'IBM Plex Mono', monospace; font-size:14px; text-align:center; padding:6px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--text); direction:ltr;" id="delivery-fee-total" value="0" placeholder="0">
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px;">
+        <span>رسوم التوصيل للشخص الواحد</span><span style="font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;" id="delivery-per-person">0 ل.س</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0 0; font-weight:600; font-size:16px;">
+        <span>الإجمالي الكلي</span><span style="font-family:'IBM Plex Mono', monospace; color:var(--mustard); direction:ltr;" id="full-total">0 ل.س</span>
+      </div>
     </div>
 
-    <div class="refresh-row">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 6px; flex-wrap:wrap; gap:8px;">
       <div style="display:flex; gap:8px;">
-        <button class="refresh-btn" id="refresh-btn">تحديث الآن</button>
-        <button class="refresh-btn" id="export-btn">⭳ تصدير CSV</button>
+        <button style="font-family:'Cairo', sans-serif; font-size:13px; font-weight:600; padding:9px 16px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--rust); cursor:pointer;" id="refresh-btn" onclick="loadTotals(document.getElementById('session-picker').value)">تحديث الآن</button>
+        <button style="font-family:'Cairo', sans-serif; font-size:13px; font-weight:600; padding:9px 16px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--rust); cursor:pointer;" id="export-btn" onclick="exportTotalsCSV()">⭳ تصدير CSV</button>
       </div>
-      <span class="updated" id="updated"></span>
+      <span style="font-family:'Cairo', sans-serif; font-size:12px; color:var(--text-dim);" id="updated"></span>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-// ====== Fill these in from Supabase: Settings > Data API (URL) and Settings > API Keys (Publishable key) ======
 const SUPABASE_URL = 'https://jmqbsicjpncaycopnzde.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CLq7XSVrudltwN9J5mXbOg_Iy5Ra9Dj';
-// =================================================================================================================
 
-// FIXED: Use a global window check to avoid "Identifier 'supabase' has already been declared" error
 if (!window._supabaseClient) {
   window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 var supabase = window._supabaseClient;
 
-// Polling intervals — Supabase has no server-side "live" cache like the old
-// Apps Script version did, so these poll the database directly. Still kept
-// deliberately modest so several people's tabs don't hammer the DB.
-const SESSION_POLL_MS = 10000;        // countdown itself still ticks locally every 1s
+const SESSION_POLL_MS = 10000;
 const TOTALS_POLL_MS = 8000;
-const SESSIONS_LIST_POLL_MS = 20000;  // new/ended sessions rarely need faster than this
-
-// How many of the most recent sessions to show in the totals dropdown.
+const SESSIONS_LIST_POLL_MS = 20000;
 const TOTALS_SESSION_LIMIT = 2;
 
-let MENU = [];              // nested menu, used only for the "start session" pickers
-let currentSession = null;  // active session object from the server, or null
-let clockOffsetMs = 0;      // serverNow - Date.now(), so countdown isn't thrown off by device clock drift
-const qty = {};              // itemId -> quantity, persists across item changes
+let MENU = [];
+let currentSession = null;
+let clockOffsetMs = 0;
+const qty = {};
 let countdownTimer = null;
 let totalsGrandTotal = 0;
 let sessionsCache = [];
-let personRows = []; // per-employee subtotal/participation for the current totals view
-let employeesList = []; // names for the searchable name field
-let lastTotalsData = null; // most recent totals payload, kept around for CSV export
+let personRows = [];
+let employeesList = [];
+let lastTotalsData = null;
 
 function money(amount) {
   const n = Number(amount) || 0;
@@ -397,20 +431,116 @@ function switchTab(tab) {
   if (tab === 'totals') loadSessionsList();
 }
 
+function showAdminModal() {
+  document.getElementById('admin-modal').classList.add('active');
+}
+
+function hideAdminModal() {
+  document.getElementById('admin-modal').classList.remove('active');
+  document.getElementById('admin-password').value = '';
+  document.getElementById('admin-password-emp').value = '';
+  document.getElementById('menu-category').value = '';
+  document.getElementById('menu-restaurant').value = '';
+  document.getElementById('menu-item').value = '';
+  document.getElementById('menu-price').value = '';
+  document.getElementById('employee-name').value = '';
+  document.getElementById('menu-status').textContent = '';
+  document.getElementById('employee-status').textContent = '';
+}
+
+function switchAdminTab(tab) {
+  document.getElementById('admin-menu').classList.toggle('active', tab === 'menu');
+  document.getElementById('admin-employee').classList.toggle('active', tab === 'employee');
+  document.querySelectorAll('.admin-tabs button').forEach((btn, idx) => {
+    btn.classList.toggle('active', (idx === 0 && tab === 'menu') || (idx === 1 && tab === 'employee'));
+  });
+}
+
+async function addMenuItem() {
+  const statusEl = document.getElementById('menu-status');
+  const password = document.getElementById('admin-password').value;
+  const category = document.getElementById('menu-category').value;
+  const restaurant = document.getElementById('menu-restaurant').value;
+  const item = document.getElementById('menu-item').value;
+  const price = Number(document.getElementById('menu-price').value);
+
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+
+  if (!password) { statusEl.textContent = 'أدخل كلمة المرور'; statusEl.className = 'status err'; return; }
+  if (!category || !restaurant || !item || !price) { statusEl.textContent = 'جميع الحقول مطلوبة'; statusEl.className = 'status err'; return; }
+
+  try {
+    const { data, error } = await supabase.rpc('add_menu_item', {
+      p_admin_password: password,
+      p_category: category,
+      p_restaurant: restaurant,
+      p_item: item,
+      p_price: price
+    });
+    if (error) throw error;
+    if (data.ok) {
+      statusEl.textContent = data.message;
+      statusEl.className = 'status ok';
+      document.getElementById('menu-category').value = '';
+      document.getElementById('menu-restaurant').value = '';
+      document.getElementById('menu-item').value = '';
+      document.getElementById('menu-price').value = '';
+      document.getElementById('admin-password').value = '';
+      setTimeout(() => loadMenuForStartPickers(), 500);
+    } else {
+      statusEl.textContent = data.error;
+      statusEl.className = 'status err';
+    }
+  } catch (err) {
+    statusEl.textContent = 'حدث خطأ — حاول مرة أخرى';
+    statusEl.className = 'status err';
+  }
+}
+
+async function addEmployee() {
+  const statusEl = document.getElementById('employee-status');
+  const password = document.getElementById('admin-password-emp').value;
+  const name = document.getElementById('employee-name').value;
+
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+
+  if (!password) { statusEl.textContent = 'أدخل كلمة المرور'; statusEl.className = 'status err'; return; }
+  if (!name) { statusEl.textContent = 'أدخل اسم الموظف'; statusEl.className = 'status err'; return; }
+
+  try {
+    const { data, error } = await supabase.rpc('add_employee', {
+      p_admin_password: password,
+      p_name: name
+    });
+    if (error) throw error;
+    if (data.ok) {
+      statusEl.textContent = data.message;
+      statusEl.className = 'status ok';
+      document.getElementById('employee-name').value = '';
+      document.getElementById('admin-password-emp').value = '';
+      setTimeout(() => refreshSessionStatus(), 500);
+    } else {
+      statusEl.textContent = data.error;
+      statusEl.className = 'status err';
+    }
+  } catch (err) {
+    statusEl.textContent = 'حدث خطأ — حاول مرة أخرى';
+    statusEl.className = 'status err';
+  }
+}
+
 function setupWarningVisible() {
   return SUPABASE_URL.indexOf('PASTE_YOUR') === 0;
 }
-
-// ---------------------------------------------------------------------
-// ORDER VIEW
-// ---------------------------------------------------------------------
 
 async function initOrder() {
   if (setupWarningVisible()) {
     document.getElementById('initial-loading').style.display = 'none';
     document.getElementById('start-session-card').style.display = 'block';
     document.getElementById('start-session-card').innerHTML =
-      '<div class="setup-warning">أضف رابط مشروع Supabase (Project URL) إلى SUPABASE_URL في أعلى الكود بهذا الملف. تجده في Settings &gt; Data API.</div>';
+      '<div class="setup-warning">أضف رابط مشروع Supabase إلى SUPABASE_URL في أعلى الكود</div>';
     return;
   }
   const slowNoticeTimer = setTimeout(() => {
@@ -435,8 +565,6 @@ async function loadMenuForStartPickers() {
   }
 }
 
-// Turns flat menu rows into the same { category, restaurants: [{ restaurant, items }] }
-// shape the rest of the UI code expects.
 function buildMenuTree(rows) {
   const categoryOrder = [];
   const categoryMap = {};
@@ -532,7 +660,6 @@ async function refreshSessionStatus() {
     if (loadingEl && loadingEl.style.display !== 'none') {
       loadingEl.innerHTML = 'تعذر الاتصال بالخادم. <button class="refresh-btn" onclick="refreshSessionStatus()" style="margin-inline-start:8px;">إعادة المحاولة</button>';
     }
-    // otherwise: silent — keep whatever state we last had, try again on next poll
   }
 }
 
@@ -619,7 +746,7 @@ function populateEmployees(names) {
   employeesList = names || [];
   const searchInput = document.getElementById('name-search');
   if (employeesList.length === 0) {
-    searchInput.placeholder = 'لا توجد أسماء بعد — أضفها في جدول employees';
+    searchInput.placeholder = 'لا توجد أسماء بعد — أضفها عبر لوحة التحكم';
     searchInput.disabled = true;
   } else {
     searchInput.disabled = false;
@@ -685,20 +812,13 @@ async function loadMyOrderFor(name) {
       byItem[row.item_id].lineTotal += Number(row.line_total);
     });
 
-    // ===== NEW: Populate the qty object with existing order amounts =====
     if (Object.keys(byItem).length > 0) {
-      // Load their existing quantities into the qty object
       Object.entries(byItem).forEach(([itemId, itemData]) => {
         qty[itemId] = itemData.qty;
       });
-      
-      // Re-render the items list to show the populated quantities
       renderItemsList(currentSession.items);
-      
-      // Show hint
       renderMyOrderHint(Object.values(byItem));
     } else {
-      // No existing orders - clear quantities
       Object.keys(qty).forEach(id => delete qty[id]);
       renderItemsList(currentSession.items);
       document.getElementById('existing-order-hint').style.display = 'none';
@@ -857,10 +977,6 @@ async function submitOrder() {
   }
 }
 
-// ---------------------------------------------------------------------
-// TOTALS VIEW
-// ---------------------------------------------------------------------
-
 function sessionOptionsHtml(sessions) {
   return sessions.map(s => {
     const dt = new Date(s.startTime);
@@ -874,7 +990,6 @@ async function loadSessionsList() {
 
   if (setupWarningVisible()) {
     picker.innerHTML = '<option>الإعداد مطلوب</option>';
-    showTotalsMessage('<div class="setup-warning">أضف رابط مشروع Supabase إلى SUPABASE_URL في أعلى الكود بهذا الملف.</div>');
     return;
   }
 
@@ -892,7 +1007,6 @@ async function loadSessionsList() {
 
     if (sessionsCache.length === 0) {
       picker.innerHTML = '<option>لا توجد جلسات بعد</option>';
-      showTotalsMessage('لم تبدأ أي جلسة طلب بعد.');
       return;
     }
 
@@ -901,61 +1015,21 @@ async function loadSessionsList() {
     loadTotals(picker.value);
   } catch (err) {
     picker.innerHTML = '<option>تعذر التحميل</option>';
-    showTotalsMessage('<div class="setup-warning">تعذر تحميل قائمة الجلسات. تحقق من إعدادات Supabase.</div>');
   }
-}
-
-async function refreshSessionsListPreserveSelection() {
-  if (setupWarningVisible()) return;
-  const picker = document.getElementById('session-picker');
-  const previousValue = picker.value;
-
-  try {
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('id, category, restaurant, start_time, active')
-      .order('start_time', { ascending: false })
-      .limit(TOTALS_SESSION_LIMIT);
-    if (error) throw error;
-
-    sessionsCache = (data || []).map(s => ({
-      id: s.id, category: s.category, restaurant: s.restaurant, startTime: s.start_time, active: !!s.active
-    }));
-    if (sessionsCache.length === 0) return;
-
-    picker.innerHTML = sessionOptionsHtml(sessionsCache);
-    const stillExists = sessionsCache.some(s => s.id === previousValue);
-    picker.value = stillExists ? previousValue : sessionsCache[0].id;
-    picker.onchange = () => loadTotals(picker.value);
-  } catch (err) {
-    // silent — try again on next poll
-  }
-}
-
-function showTotalsMessage(html) {
-  document.getElementById('matrix-table').style.display = 'none';
-  const note = document.getElementById('totals-empty-note');
-  note.style.display = 'block';
-  note.innerHTML = html;
 }
 
 async function loadTotals(sessionId) {
   if (!sessionId) return;
   try {
-    // Session's frozen item list
-    const { data: sessionRow, error: sErr } = await supabase
-      .from('sessions').select('items').eq('id', sessionId).single();
+    const { data: sessionRow, error: sErr } = await supabase.from('sessions').select('items').eq('id', sessionId).single();
     if (sErr) throw sErr;
     const items = sessionRow ? (sessionRow.items || []) : [];
 
-    // All employees (so people who ordered nothing still show a row)
     const { data: employeeRows, error: eErr } = await supabase.from('employees').select('name').order('name');
     if (eErr) throw eErr;
     const employees = (employeeRows || []).map(r => r.name);
 
-    // Raw order lines for this session
-    const { data: orderRows, error: oErr } = await supabase
-      .from('orders').select('name, item_id, qty, line_total').eq('session_id', sessionId);
+    const { data: orderRows, error: oErr } = await supabase.from('orders').select('name, item_id, qty, line_total').eq('session_id', sessionId);
     if (oErr) throw oErr;
 
     const matrix = {};
@@ -984,7 +1058,7 @@ async function loadTotals(sessionId) {
     renderMatrix(data);
     document.getElementById('updated').textContent = 'آخر تحديث ' + new Date().toLocaleTimeString('ar-EG-u-nu-latn');
   } catch (err) {
-    showTotalsMessage('<div class="setup-warning">تعذر تحميل الإجماليات. تحقق من إعدادات Supabase.</div>');
+    //
   }
 }
 
@@ -1014,37 +1088,37 @@ function renderMatrix(data) {
   });
 
   const headRow = document.getElementById('matrix-head-row');
-  headRow.innerHTML = '<th class="name-col">الاسم</th>' + items.map(item => `
-    <th><span class="item-head-name">${escapeHtml(item.name)}</span></th>
-  `).join('') + '<th>المجموع الفرعي</th><th>رسوم التوصيل</th><th>الإجمالي</th>';
+  headRow.innerHTML = '<th style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1;">الاسم</th>' + items.map(item => `
+    <th style="padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:center;">${escapeHtml(item.name)}</th>
+  `).join('') + '<th style="padding:9px 10px; border-bottom:1px solid var(--line);">المجموع الفرعي</th><th style="padding:9px 10px; border-bottom:1px solid var(--line);">رسوم التوصيل</th><th style="padding:9px 10px; border-bottom:1px solid var(--line);">الإجمالي</th>';
 
   const bodyEl = document.getElementById('matrix-body');
   if (employees.length === 0) {
-    bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
+    bodyEl.innerHTML = `<tr><td>—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
   } else {
     bodyEl.innerHTML = personRows.map((p, i) => {
       const row = matrix[p.name] || {};
       const cells = items.map(item => {
         const q = row[item.id];
-        return `<td class="qty-cell">${q ? q : ''}</td>`;
+        return `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${q ? q : ''}</td>`;
       }).join('');
       return `<tr>
-        <td class="name-col">${escapeHtml(p.name)}</td>
+        <td style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">${escapeHtml(p.name)}</td>
         ${cells}
-        <td class="qty-cell" id="subtotal-cell-${i}">${money(p.subtotal)}</td>
-        <td class="qty-cell" id="fee-cell-${i}">—</td>
-        <td class="qty-cell" id="total-cell-${i}">—</td>
+        <td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);" id="subtotal-cell-${i}">${money(p.subtotal)}</td>
+        <td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);" id="fee-cell-${i}">—</td>
+        <td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);" id="total-cell-${i}">—</td>
       </tr>`;
     }).join('');
   }
 
   const footEl = document.getElementById('matrix-foot');
-  const priceRow = '<tr class="summary-row"><td class="name-col">السعر</td>' +
-    items.map(item => `<td>${money(item.price)}</td>`).join('') + '<td></td><td></td><td></td></tr>';
-  const qtyRow = '<tr class="summary-row"><td class="name-col">الكمية</td>' +
-    items.map(item => `<td>${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '<td></td><td></td><td></td></tr>';
-  const totalRow = '<tr class="summary-row"><td class="name-col">الإجمالي</td>' +
-    items.map(item => `<td>${money((totalsByItem[item.id] || {}).total || 0)}</td>`).join('') +
+  const priceRow = '<tr><td style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">السعر</td>' +
+    items.map(item => `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${money(item.price)}</td>`).join('') + '<td></td><td></td><td></td></tr>';
+  const qtyRow = '<tr><td style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">الكمية</td>' +
+    items.map(item => `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '<td></td><td></td><td></td></tr>';
+  const totalRow = '<tr><td style="text-align:right; position:sticky; right:0; background:var(--panel-2); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">الإجمالي</td>' +
+    items.map(item => `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${money((totalsByItem[item.id] || {}).total || 0)}</td>`).join('') +
     '<td id="summary-subtotal-total"></td><td id="summary-fee-total"></td><td id="summary-total-total"></td></tr>';
   footEl.innerHTML = priceRow + qtyRow + totalRow;
 
@@ -1090,10 +1164,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ---------------------------------------------------------------------
-// EXPORT (CSV)
-// ---------------------------------------------------------------------
-
 function csvEscape(value) {
   const str = value === null || value === undefined ? '' : String(value);
   if (/[",\n]/.test(str)) {
@@ -1120,9 +1190,7 @@ function exportTotalsCSV() {
   const perPersonFee = participantCount > 0 ? deliveryTotal / participantCount : 0;
 
   const rows = [];
-
   rows.push(['الاسم', ...items.map(it => it.name), 'المجموع الفرعي', 'رسوم التوصيل', 'الإجمالي']);
-
   personRows.forEach(p => {
     const row = matrix[p.name] || {};
     const cells = items.map(it => row[it.id] || 0);
@@ -1133,34 +1201,17 @@ function exportTotalsCSV() {
 
   rows.push(['السعر', ...items.map(it => it.price), '', '', '']);
   rows.push(['الكمية', ...items.map(it => (totalsByItem[it.id] || {}).qty || 0), '', '', '']);
-  rows.push([
-    'الإجمالي',
-    ...items.map(it => ((totalsByItem[it.id] || {}).total || 0).toFixed(2)),
-    totalsGrandTotal.toFixed(2),
-    deliveryTotal.toFixed(2),
-    (totalsGrandTotal + deliveryTotal).toFixed(2),
-  ]);
-
+  rows.push(['الإجمالي', ...items.map(it => ((totalsByItem[it.id] || {}).total || 0).toFixed(2)), totalsGrandTotal.toFixed(2), deliveryTotal.toFixed(2), (totalsGrandTotal + deliveryTotal).toFixed(2)]);
   rows.push([]);
   rows.push(['عدد المشاركين', participantCount + ' / ' + personRows.length]);
-  rows.push(['الإجمالي الفرعي (الأصناف)', totalsGrandTotal.toFixed(2)]);
+  rows.push(['الإجمالي الفرعي', totalsGrandTotal.toFixed(2)]);
   rows.push(['إجمالي رسوم التوصيل', deliveryTotal.toFixed(2)]);
-  rows.push(['رسوم التوصيل للشخص الواحد', perPersonFee.toFixed(2)]);
+  rows.push(['رسوم التوصيل للشخص', perPersonFee.toFixed(2)]);
   rows.push(['الإجمالي الكلي', (totalsGrandTotal + deliveryTotal).toFixed(2)]);
 
   const csvContent = rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+  const filename = `طلب-${new Date().toISOString().slice(0, 10)}.csv`;
 
-  const picker = document.getElementById('session-picker');
-  const selectedOption = picker.options[picker.selectedIndex];
-  const label = selectedOption ? selectedOption.textContent : 'session';
-  const safeLabel = label.replace(/[\\/:*?"<>|]/g, '').trim();
-  const dateStr = new Date().toISOString().slice(0, 10);
-  const filename = `طلب-${safeLabel}-${dateStr}.csv`;
-
-  downloadCSV(filename, csvContent);
-}
-
-function downloadCSV(filename, csvContent) {
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -1190,8 +1241,6 @@ document.getElementById('end-session-pin').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') endSessionNow();
 });
 document.getElementById('submit-btn').addEventListener('click', submitOrder);
-document.getElementById('refresh-btn').addEventListener('click', () => loadTotals(document.getElementById('session-picker').value));
-document.getElementById('export-btn').addEventListener('click', exportTotalsCSV);
 document.getElementById('delivery-fee-total').addEventListener('input', updatePersonFeeColumns);
 
 document.getElementById('name-search').addEventListener('focus', () => renderNameOptions(document.getElementById('name-search').value));
@@ -1220,11 +1269,6 @@ setInterval(() => {
     if (picker.value) loadTotals(picker.value);
   }
 }, TOTALS_POLL_MS);
-setInterval(() => {
-  if (document.getElementById('view-totals').classList.contains('active')) {
-    refreshSessionsListPreserveSelection();
-  }
-}, SESSIONS_LIST_POLL_MS);
 </script>
 </body>
 </html>
