@@ -190,6 +190,21 @@
   }
   .locked-card .big{font-size:16px; font-weight:600; color:var(--rust); margin-bottom:6px;}
   .locked-card p{font-size:13px; color:var(--text-dim); margin:0;}
+
+  /* ---- Totals matrix table: sticky header row + sticky name column ---- */
+  .matrix thead th{
+    position:sticky; top:0; z-index:2;
+    background:var(--panel); font-weight:600;
+    padding:9px 10px; border-bottom:1px solid var(--line);
+  }
+  .matrix th.name-col, .matrix td.name-col{
+    position:sticky; right:0; z-index:1;
+    text-align:right; background:var(--panel); font-weight:600;
+  }
+  /* corner cell has to win both directions at once, so it needs the
+     highest z-index of any cell in the table */
+  .matrix thead th.name-col{ z-index:3; }
+  .matrix tfoot td.name-col{ background:var(--panel-2); }
 </style>
 </head>
 <body>
@@ -389,7 +404,7 @@
 
     <div style="overflow-x:auto; overflow-y:auto; max-height:480px; border:1px solid var(--line); border-radius:10px; background:var(--panel);">
       <table class="matrix" id="matrix-table" style="width:100%; border-collapse:collapse; font-size:13.5px; min-width:820px;">
-        <thead><tr id="matrix-head-row"><th style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1;">الاسم</th></tr></thead>
+        <thead><tr id="matrix-head-row"><th class="name-col">الاسم</th></tr></thead>
         <tbody id="matrix-body"></tbody>
         <tfoot id="matrix-foot"></tfoot>
       </table>
@@ -502,13 +517,11 @@ async function addMenuItem() {
   const statusEl = document.getElementById('menu-status');
   const password = document.getElementById('admin-password').value;
 
-  // Get category - either from dropdown or from new input
   let category = document.getElementById('menu-category').value;
   if (category === '_new_category_') {
     category = document.getElementById('menu-category-new').value;
   }
 
-  // Get restaurant - either from dropdown or from new input
   let restaurant = document.getElementById('menu-restaurant').value;
   if (restaurant === '_new_restaurant_') {
     restaurant = document.getElementById('menu-restaurant-new').value;
@@ -695,11 +708,6 @@ async function loadMenuForStartPickers() {
   }
 }
 
-// Re-fetches the menu from the database and refreshes every dropdown that
-// depends on it: the "start session" pickers AND the admin panel pickers
-// (add-item category/restaurant, manage-item category/restaurant/item).
-// Called whenever the admin modal opens and after any add/remove action,
-// so newly added or removed restaurants/items show up immediately.
 async function refreshMenuData() {
   await loadMenuForStartPickers();
   populateAdminMenuPickers();
@@ -755,7 +763,6 @@ function populateStartRestaurants() {
   select.innerHTML = catGroup.restaurants.map(r => `<option value="${escapeHtml(r.restaurant)}">${escapeHtml(r.restaurant)}</option>`).join('');
 }
 
-// ---- Admin "Add Item" tab pickers (dynamic, built from MENU) ----
 function populateAdminMenuPickers() {
   const categorySelect = document.getElementById('menu-category');
   const currentCategoryVal = categorySelect.value;
@@ -776,7 +783,6 @@ function populateAdminRestaurants() {
   if ([...restaurantSelect.options].some(o => o.value === currentRestaurantVal)) restaurantSelect.value = currentRestaurantVal;
 }
 
-// ---- Admin "Manage / Remove" tab pickers (dynamic, built from MENU) ----
 function populateManagePickers() {
   const select = document.getElementById('manage-category');
   if (MENU.length === 0) {
@@ -1163,7 +1169,6 @@ async function submitOrder() {
       statusEl.className = 'status ok';
       notesInput.value = '';
 
-      // ===== FIX: Reload their order from the database immediately =====
       await loadMyOrderFor(name);
 
     } else {
@@ -1290,13 +1295,13 @@ function renderMatrix(data) {
   });
 
   const headRow = document.getElementById('matrix-head-row');
-  headRow.innerHTML = '<th style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1;">الاسم</th>' + items.map(item => `
-    <th style="padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; text-align:center;">${escapeHtml(item.name)}</th>
-  `).join('') + '<th style="padding:9px 10px; border-bottom:1px solid var(--line);">المجموع الفرعي</th><th style="padding:9px 10px; border-bottom:1px solid var(--line);">رسوم التوصيل</th><th style="padding:9px 10px; border-bottom:1px solid var(--line);">الإجمالي</th>';
+  headRow.innerHTML = '<th class="name-col">الاسم</th>' + items.map(item => `
+    <th style="white-space:nowrap; text-align:center;">${escapeHtml(item.name)}</th>
+  `).join('') + '<th style="text-align:center;">المجموع الفرعي</th><th style="text-align:center;">رسوم التوصيل</th><th style="text-align:center;">الإجمالي</th>';
 
   const bodyEl = document.getElementById('matrix-body');
   if (employees.length === 0) {
-    bodyEl.innerHTML = `<tr><td>—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
+    bodyEl.innerHTML = `<tr><td class="name-col">—</td>${items.map(() => '<td></td>').join('')}<td></td><td></td><td></td></tr>`;
   } else {
     bodyEl.innerHTML = personRows.map((p, i) => {
       const row = matrix[p.name] || {};
@@ -1305,7 +1310,7 @@ function renderMatrix(data) {
         return `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${q ? q : ''}</td>`;
       }).join('');
       return `<tr>
-        <td style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">${escapeHtml(p.name)}</td>
+        <td class="name-col" style="padding:9px 10px; border-bottom:1px solid var(--line);">${escapeHtml(p.name)}</td>
         ${cells}
         <td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);" id="subtotal-cell-${i}">${money(p.subtotal)}</td>
         <td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);" id="fee-cell-${i}">—</td>
@@ -1315,11 +1320,11 @@ function renderMatrix(data) {
   }
 
   const footEl = document.getElementById('matrix-foot');
-  const priceRow = '<tr><td style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">السعر</td>' +
+  const priceRow = '<tr><td class="name-col" style="padding:9px 10px; border-bottom:1px solid var(--line);">السعر</td>' +
     items.map(item => `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${money(item.price)}</td>`).join('') + '<td></td><td></td><td></td></tr>';
-  const qtyRow = '<tr><td style="text-align:right; position:sticky; right:0; background:var(--panel); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">الكمية</td>' +
+  const qtyRow = '<tr><td class="name-col" style="padding:9px 10px; border-bottom:1px solid var(--line);">الكمية</td>' +
     items.map(item => `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${(totalsByItem[item.id] || {}).qty || 0}</td>`).join('') + '<td></td><td></td><td></td></tr>';
-  const totalRow = '<tr><td style="text-align:right; position:sticky; right:0; background:var(--panel-2); font-weight:600; z-index:1; padding:9px 10px; border-bottom:1px solid var(--line);">الإجمالي</td>' +
+  const totalRow = '<tr><td class="name-col" style="padding:9px 10px; border-bottom:1px solid var(--line);">الإجمالي</td>' +
     items.map(item => `<td style="text-align:center; padding:9px 10px; border-bottom:1px solid var(--line);">${money((totalsByItem[item.id] || {}).total || 0)}</td>`).join('') +
     '<td id="summary-subtotal-total"></td><td id="summary-fee-total"></td><td id="summary-total-total"></td></tr>';
   footEl.innerHTML = priceRow + qtyRow + totalRow;
@@ -1472,7 +1477,6 @@ setInterval(() => {
   }
 }, TOTALS_POLL_MS);
 
-// Handle category dropdown change (Add Item tab)
 document.getElementById('menu-category').addEventListener('change', () => {
   const value = document.getElementById('menu-category').value;
   if (value === '_new_category_') {
@@ -1485,7 +1489,6 @@ document.getElementById('menu-category').addEventListener('change', () => {
   populateAdminRestaurants();
 });
 
-// Handle restaurant dropdown change (Add Item tab)
 document.getElementById('menu-restaurant').addEventListener('change', () => {
   const value = document.getElementById('menu-restaurant').value;
   if (value === '_new_restaurant_') {
@@ -1497,11 +1500,9 @@ document.getElementById('menu-restaurant').addEventListener('change', () => {
   }
 });
 
-// Manage / Remove tab cascading selects
 document.getElementById('manage-category').addEventListener('change', populateManageRestaurants);
 document.getElementById('manage-restaurant').addEventListener('change', populateManageItems);
 
-// Close modal when clicking outside of it
 document.getElementById('admin-modal').addEventListener('click', (e) => {
   if (e.target.id === 'admin-modal') {
     hideAdminModal();
