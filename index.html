@@ -217,12 +217,34 @@
           <input type="password" id="admin-password" placeholder="أدخل كلمة المرور">
         </div>
         <div class="field">
-          <label for="menu-category">الفئة (جديدة أو موجودة)</label>
-          <input type="text" id="menu-category" placeholder="مثال: فطائر، سندويش، مشروبات…">
+          <label for="menu-category">الفئة</label>
+          <select id="menu-category">
+            <option>-- اختر من الموجود --</option>
+            <option>فطائر</option>
+            <option>سندويش</option>
+            <option>مشروبات</option>
+            <option>_new_category_">➕ إضافة فئة جديدة</option>
+          </select>
         </div>
+        <div id="new-category-input" class="field" style="display:none;">
+          <label for="menu-category-new">اسم الفئة الجديدة</label>
+          <input type="text" id="menu-category-new" placeholder="مثال: حلويات، عصائر…">
+        </div>
+
         <div class="field">
-          <label for="menu-restaurant">المطعم (جديد أو موجود)</label>
-          <input type="text" id="menu-restaurant" placeholder="مثال: فطائر المزة، الصداقة…">
+          <label for="menu-restaurant">المطعم</label>
+          <select id="menu-restaurant">
+            <option>-- اختر من الموجود --</option>
+            <option>فطائر المزة</option>
+            <option>فطائر المحبة</option>
+            <option>الصداقة</option>
+            <option>على كيفك</option>
+            <option value="_new_restaurant_">➕ إضافة مطعم جديد</option>
+          </select>
+        </div>
+        <div id="new-restaurant-input" class="field" style="display:none;">
+          <label for="menu-restaurant-new">اسم المطعم الجديد</label>
+          <input type="text" id="menu-restaurant-new" placeholder="مثال: فطائر الحلال، مطعم الطازة…">
         </div>
         <div class="field">
           <label for="menu-item">اسم الصنف</label>
@@ -448,8 +470,19 @@ function switchAdminTab(tab) {
 async function addMenuItem() {
   const statusEl = document.getElementById('menu-status');
   const password = document.getElementById('admin-password').value;
-  const category = document.getElementById('menu-category').value;
-  const restaurant = document.getElementById('menu-restaurant').value;
+  
+  // Get category - either from dropdown or from new input
+  let category = document.getElementById('menu-category').value;
+  if (category === '_new_category_') {
+    category = document.getElementById('menu-category-new').value;
+  }
+  
+  // Get restaurant - either from dropdown or from new input
+  let restaurant = document.getElementById('menu-restaurant').value;
+  if (restaurant === '_new_restaurant_') {
+    restaurant = document.getElementById('menu-restaurant-new').value;
+  }
+  
   const item = document.getElementById('menu-item').value;
   const price = Number(document.getElementById('menu-price').value);
 
@@ -472,10 +505,14 @@ async function addMenuItem() {
       statusEl.textContent = data.message;
       statusEl.className = 'status ok';
       document.getElementById('menu-category').value = '';
+      document.getElementById('menu-category-new').value = '';
       document.getElementById('menu-restaurant').value = '';
+      document.getElementById('menu-restaurant-new').value = '';
       document.getElementById('menu-item').value = '';
       document.getElementById('menu-price').value = '';
       document.getElementById('admin-password').value = '';
+      document.getElementById('new-category-input').style.display = 'none';
+      document.getElementById('new-restaurant-input').style.display = 'none';
       setTimeout(() => loadMenuForStartPickers(), 500);
     } else {
       statusEl.textContent = data.error;
@@ -1258,6 +1295,30 @@ setInterval(() => {
     if (picker.value) loadTotals(picker.value);
   }
 }, TOTALS_POLL_MS);
+
+// Handle category dropdown change
+document.getElementById('menu-category').addEventListener('change', () => {
+  const value = document.getElementById('menu-category').value;
+  if (value === '_new_category_') {
+    document.getElementById('new-category-input').style.display = 'block';
+    document.getElementById('menu-category-new').focus();
+  } else {
+    document.getElementById('new-category-input').style.display = 'none';
+    document.getElementById('menu-category-new').value = '';
+  }
+});
+
+// Handle restaurant dropdown change
+document.getElementById('menu-restaurant').addEventListener('change', () => {
+  const value = document.getElementById('menu-restaurant').value;
+  if (value === '_new_restaurant_') {
+    document.getElementById('new-restaurant-input').style.display = 'block';
+    document.getElementById('menu-restaurant-new').focus();
+  } else {
+    document.getElementById('new-restaurant-input').style.display = 'none';
+    document.getElementById('menu-restaurant-new').value = '';
+  }
+});
 </script>
 </body>
 </html>
